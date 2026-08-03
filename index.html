@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>محمل الفيديوهات</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    :root {
+      --bg: #0a0a0f;
+      --surface: #12121a;
+      --surface-2: #1a1a28;
+      --border: #2a2a3a;
+      --text: #e8e8f0;
+      --text-dim: #8888a0;
+      --accent: #6c5ce7;
+      --accent-hover: #7d6ff0;
+      --accent-glow: rgba(108, 92, 231, 0.3);
+      --success: #00cec9;
+      --error: #ff6b6b;
+      --radius: 12px;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    /* Background gradient */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at 30% 20%, rgba(108,92,231,0.08) 0%, transparent 50%),
+                  radial-gradient(circle at 70% 80%, rgba(0,206,201,0.05) 0%, transparent 50%);
+      z-index: -1;
+    }
+    
+    header {
+      text-align: center;
+      padding: 3rem 1rem 1rem;
+    }
+    
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--success));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    header p {
+      color: var(--text-dim);
+      margin-top: 0.5rem;
+      font-size: 0.95rem;
+    }
+    
+    main {
+      flex: 1;
+      max-width: 600px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+    
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      margin-bottom: 0.5rem;
+    }
+    
+    .url-input {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 1rem;
+      direction: ltr;
+      text-align: left;
+      transition: border-color 0.2s;
+    }
+    
+    .url-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    
+    .url-input::placeholder {
+      color: var(--text-dim);
+      opacity: 0.6;
+    }
+    
+    .options {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+    
+    .option-btn {
+      flex: 1;
+      min-width: 80px;
+      padding: 0.7rem 0.5rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-dim);
+      cursor: pointer;
+      text-align: center;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    
+    .option-btn:hover {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+    
+    .option-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    
+    .quality-row {
+      display: none;
+      margin-top: 1rem;
+    }
+    
+    .quality-row.visible {
+      display: block;
+    }
+    
+    .quality-options {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    .download-btn {
+      width: 100%;
+      padding: 0.9rem;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 1.5rem;
+    }
+    
+    .download-btn:hover:not(:disabled) {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px var(--accent-glow);
+    }
+    
+    .download-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .status {
+      text-align: center;
+      padding: 1rem;
+      margin-top: 1rem;
+      border-radius: 8px;
+      display: none;
+    }
+    
+    .status.visible { display: block; }
+    
+    .status.loading {
+      background: var(--surface-2);
+      color: var(--text-dim);
+    }
+    
+    .status.error {
+      background: rgba(255,107,107,0.1);
+      color: var(--error);
+    }
+    
+    .status.success {
+      background: rgba(0,206,201,0.1);
+      color: var(--success);
+    }
+    
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      vertical-align: middle;
+      margin-left: 0.5rem;
+    }
+    
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    /* History */
+    .history-title {
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      margin-bottom: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .clear-btn {
+      background: none;
+      border: none;
+      color: var(--error);
+      cursor: pointer;
+      font-size: 0.8rem;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+    
+    .clear-btn:hover { opacity: 1; }
+    
+    .history-list {
+      max-height: 250px;
+      overflow-y: auto;
+    }
+    
+    .history-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem;
+    }
+    
+    .history-item:last-child { border-bottom: none; }
+    
+    .history-item .format-badge {
+      background: var(--accent);
+      color: white;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      white-space: nowrap;
+    }
+    
+    .history-item .history-url {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text-dim);
+      direction: ltr;
+      text-align: left;
+    }
+    
+    .history-item .history-time {
+      color: var(--text-dim);
+      font-size: 0.75rem;
+      white-space: nowrap;
+    }
+    
+    .history-empty {
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      text-align: center;
+      padding: 1rem;
+      opacity: 0.5;
+    }
+    
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      color: var(--text-dim);
+      font-size: 0.8rem;
+      border-top: 1px solid var(--border);
+      margin-top: auto;
+    }
+    
+    /* Custom scrollbar */
+    .history-list::-webkit-scrollbar { width: 4px; }
+    .history-list::-webkit-scrollbar-track { background: transparent; }
+    .history-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    
+    @media (max-width: 480px) {
+      header h1 { font-size: 1.5rem; }
+      .options { flex-direction: column; }
+      .option-btn { min-width: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>محمل الفيديوهات</h1>
+    <p>حمّل من أي منصة — يوتيوب، فيسبوك، تويتر، انستغرام وغيرها</p>
+  </header>
+  
+  <main>
+    <div class="card">
+      <label for="url">رابط الفيديو</label>
+      <input 
+        type="url" 
+        id="url" 
+        class="url-input" 
+        placeholder="https://www.youtube.com/watch?v=..."
+        autocomplete="off"
+      >
+      
+      <label style="margin-top: 1rem;">نوع التحميل</label>
+      <div class="options">
+        <button class="option-btn active" data-format="merged" onclick="setFormat(this)">صوت + صورة</button>
+        <button class="option-btn" data-format="video" onclick="setFormat(this)">صورة فقط</button>
+        <button class="option-btn" data-format="audio" onclick="setFormat(this)">صوت فقط</button>
+      </div>
+      
+      <div id="qualityRow" class="quality-row">
+        <label>الجودة</label>
+        <div class="options quality-options">
+          <button class="option-btn active" data-quality="" onclick="setQuality(this)">أفضل</button>
+          <button class="option-btn" data-quality="720" onclick="setQuality(this)">720p</button>
+          <button class="option-btn" data-quality="480" onclick="setQuality(this)">480p</button>
+          <button class="option-btn" data-quality="360" onclick="setQuality(this)">360p</button>
+        </div>
+      </div>
+      
+      <div id="status" class="status"></div>
+      
+      <button id="downloadBtn" class="download-btn" onclick="startDownload()">
+        تحميل
+      </button>
+    </div>
+    
+    <div class="card">
+      <div class="history-title">
+        <span>السجل</span>
+        <button class="clear-btn" onclick="clearHistory()">مسح الكل</button>
+      </div>
+      <div id="historyList" class="history-list">
+        <div class="history-empty">لا توجد عمليات تحميل سابقة</div>
+      </div>
+    </div>
+  </main>
+  
+  <footer>
+    يدعم أكثر من 1000 منصة فيديو عبر yt-dlp
+  </footer>
+
+  <script>
+    // --- Config ---
+    const API_BASE = window.API_BASE || '';
+    
+    // --- State ---
+    let selectedFormat = 'merged';
+    let selectedQuality = '';
+    let isDownloading = false;
+    
+    // --- IndexedDB ---
+    function openDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open('VideoDownloader', 1);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains('history')) {
+            db.createObjectStore('history', { keyPath: 'id', autoIncrement: true });
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+    
+    async function addToHistory(url, format, filename) {
+      try {
+        const db = await openDB();
+        const tx = db.transaction('history', 'readwrite');
+        tx.objectStore('history').add({
+          url, format, filename,
+          timestamp: Date.now()
+        });
+        await new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = rej; });
+        renderHistory();
+      } catch (e) { console.error('DB error:', e); }
+    }
+    
+    async function getHistory() {
+      try {
+        const db = await openDB();
+        const tx = db.transaction('history', 'readonly');
+        const store = tx.objectStore('history');
+        const req = store.getAll();
+        return new Promise((resolve) => {
+          req.onsuccess = () => resolve(req.result.reverse());
+        });
+      } catch { return []; }
+    }
+    
+    async function clearHistory() {
+      try {
+        const db = await openDB();
+        const tx = db.transaction('history', 'readwrite');
+        tx.objectStore('history').clear();
+        await new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = rej; });
+        renderHistory();
+      } catch (e) { console.error('DB error:', e); }
+    }
+    
+    function formatTime(ts) {
+      const d = new Date(ts);
+      return d.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+    }
+    
+    async function renderHistory() {
+      const list = document.getElementById('historyList');
+      const items = await getHistory();
+      if (items.length === 0) {
+        list.innerHTML = '<div class="history-empty">لا توجد عمليات تحميل سابقة</div>';
+        return;
+      }
+      const formatLabels = { audio: 'صوت', video: 'فيديو', merged: 'دمج' };
+      list.innerHTML = items.map(item => `
+        <div class="history-item">
+          <span class="format-badge">${formatLabels[item.format] || item.format}</span>
+          <span class="history-url" title="${item.url}">${item.url}</span>
+          <span class="history-time">${formatTime(item.timestamp)}</span>
+        </div>
+      `).join('');
+    }
+    
+    // --- UI Controls ---
+    function setFormat(btn) {
+      document.querySelectorAll('.options:not(.quality-options) .option-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedFormat = btn.dataset.format;
+      const qr = document.getElementById('qualityRow');
+      qr.classList.toggle('visible', selectedFormat === 'video');
+    }
+    
+    function setQuality(btn) {
+      document.querySelectorAll('.quality-options .option-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedQuality = btn.dataset.quality;
+    }
+    
+    function showStatus(type, msg) {
+      const el = document.getElementById('status');
+      el.className = 'status visible ' + type;
+      if (type === 'loading') {
+        el.innerHTML = `<span class="spinner"></span> ${msg}`;
+      } else {
+        el.textContent = msg;
+      }
+    }
+    
+    function hideStatus() {
+      document.getElementById('status').className = 'status';
+    }
+    
+    // --- Download ---
+    async function startDownload() {
+      if (isDownloading) return;
+      
+      const url = document.getElementById('url').value.trim();
+      if (!url) {
+        showStatus('error', 'الرجاء إدخال رابط الفيديو');
+        return;
+      }
+      
+      isDownloading = true;
+      const btn = document.getElementById('downloadBtn');
+      btn.disabled = true;
+      btn.textContent = 'جارٍ التحميل...';
+      showStatus('loading', 'جارٍ جلب الفيديو والتحميل... قد يستغرق هذا بعض الوقت');
+      
+      try {
+        const body = { url, format: selectedFormat };
+        if (selectedQuality) body.quality = selectedQuality;
+        
+        const resp = await fetch(`${API_BASE}/api/download`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({ detail: 'فشل التحميل' }));
+          throw new Error(err.detail || 'فشل التحميل');
+        }
+        
+        // Get filename from header
+        const contentDisp = resp.headers.get('content-disposition') || '';
+        const filenameMatch = contentDisp.match(/filename\*?=(?:UTF-8''|"?)([^";]+)/i);
+        const filename = filenameMatch ? decodeURIComponent(filenameMatch[1].replace(/"/g, '')) : 'download';
+        
+        // Download as blob
+        const blob = await resp.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+        
+        showStatus('success', 'تم التحميل بنجاح!');
+        await addToHistory(url, selectedFormat, filename);
+        
+        setTimeout(hideStatus, 3000);
+      } catch (e) {
+        showStatus('error', e.message || 'حدث خطأ أثناء التحميل');
+      } finally {
+        isDownloading = false;
+        btn.disabled = false;
+        btn.textContent = 'تحميل';
+      }
+    }
+    
+    // Enter key to download
+    document.getElementById('url').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') startDownload();
+    });
+    
+    // Load history on start
+    renderHistory();
+  </script>
+</body>
+</html>
