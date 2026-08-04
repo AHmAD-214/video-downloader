@@ -6,355 +6,120 @@
   <title>محمل الفيديوهات</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    
     :root {
-      --bg: #0a0a0f;
-      --surface: #12121a;
-      --surface-2: #1a1a28;
-      --border: #2a2a3a;
-      --text: #e8e8f0;
-      --text-dim: #8888a0;
-      --accent: #6c5ce7;
-      --accent-hover: #7d6ff0;
-      --accent-glow: rgba(108, 92, 231, 0.3);
-      --success: #00cec9;
-      --error: #ff6b6b;
-      --radius: 12px;
+      --bg: #0a0a0f; --surface: #12121a; --surface-2: #1a1a28; --border: #2a2a3a;
+      --text: #e8e8f0; --text-dim: #8888a0; --accent: #6c5ce7; --accent-hover: #7d6ff0;
+      --accent-glow: rgba(108,92,231,0.3); --success: #00cec9; --error: #ff6b6b;
+      --warning: #feca57; --radius: 12px;
     }
-    
-    body {
-      font-family: 'Segoe UI', Tahoma, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-    
-    /* Background gradient */
-    body::before {
-      content: '';
-      position: fixed;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: radial-gradient(circle at 30% 20%, rgba(108,92,231,0.08) 0%, transparent 50%),
-                  radial-gradient(circle at 70% 80%, rgba(0,206,201,0.05) 0%, transparent 50%);
-      z-index: -1;
-    }
-    
-    header {
-      text-align: center;
-      padding: 3rem 1rem 1rem;
-    }
-    
-    header h1 {
-      font-size: 2rem;
-      font-weight: 700;
-      background: linear-gradient(135deg, var(--accent), var(--success));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    
-    header p {
-      color: var(--text-dim);
-      margin-top: 0.5rem;
-      font-size: 0.95rem;
-    }
-    
-    main {
-      flex: 1;
-      max-width: 600px;
-      width: 100%;
-      margin: 0 auto;
-      padding: 1rem;
-    }
-    
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.5rem;
-      margin-bottom: 1rem;
-    }
-    
-    label {
-      display: block;
-      font-size: 0.85rem;
-      color: var(--text-dim);
-      margin-bottom: 0.5rem;
-    }
-    
-    .url-input {
-      width: 100%;
-      padding: 0.85rem 1rem;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-size: 1rem;
-      direction: ltr;
-      text-align: left;
-      transition: border-color 0.2s;
-    }
-    
-    .url-input:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-glow);
-    }
-    
-    .url-input::placeholder {
-      color: var(--text-dim);
-      opacity: 0.6;
-    }
-    
-    .options {
-      display: flex;
-      gap: 0.5rem;
-      margin-top: 1rem;
-      flex-wrap: wrap;
-    }
-    
-    .option-btn {
-      flex: 1;
-      min-width: 80px;
-      padding: 0.7rem 0.5rem;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text-dim);
-      cursor: pointer;
-      text-align: center;
-      font-size: 0.85rem;
-      transition: all 0.2s;
-    }
-    
-    .option-btn:hover {
-      border-color: var(--accent);
-      color: var(--text);
-    }
-    
-    .option-btn.active {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: white;
-      font-weight: 600;
-    }
-    
-    .quality-row {
-      display: none;
-      margin-top: 1rem;
-    }
-    
-    .quality-row.visible {
-      display: block;
-    }
-    
-    .quality-options {
-      display: flex;
-      gap: 0.5rem;
-    }
-    
-    .download-btn {
-      width: 100%;
-      padding: 0.9rem;
-      background: var(--accent);
-      border: none;
-      border-radius: 8px;
-      color: white;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      margin-top: 1.5rem;
-    }
-    
-    .download-btn:hover:not(:disabled) {
-      background: var(--accent-hover);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 20px var(--accent-glow);
-    }
-    
-    .download-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    
-    .status {
-      text-align: center;
-      padding: 1rem;
-      margin-top: 1rem;
-      border-radius: 8px;
-      display: none;
-    }
-    
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+    body::before { content: ''; position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 30% 20%, rgba(108,92,231,0.08) 0%, transparent 50%), radial-gradient(circle at 70% 80%, rgba(0,206,201,0.05) 0%, transparent 50%); z-index: -1; }
+    header { text-align: center; padding: 3rem 1rem 1rem; }
+    header h1 { font-size: 2rem; font-weight: 700; background: linear-gradient(135deg, var(--accent), var(--success)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    header p { color: var(--text-dim); margin-top: 0.5rem; font-size: 0.95rem; }
+    main { flex: 1; max-width: 640px; width: 100%; margin: 0 auto; padding: 1rem; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1rem; }
+    label { display: block; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 0.5rem; }
+    .url-input { width: 100%; padding: 0.85rem 1rem; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1rem; direction: ltr; text-align: left; transition: border-color 0.2s; }
+    .url-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+    .url-input::placeholder { color: var(--text-dim); opacity: 0.6; }
+    .options { display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
+    .option-btn { flex: 1; min-width: 80px; padding: 0.7rem 0.5rem; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text-dim); cursor: pointer; text-align: center; font-size: 0.85rem; transition: all 0.2s; }
+    .option-btn:hover { border-color: var(--accent); color: var(--text); }
+    .option-btn.active { background: var(--accent); border-color: var(--accent); color: white; font-weight: 600; }
+    .download-btn { width: 100%; padding: 0.9rem; background: var(--accent); border: none; border-radius: 8px; color: white; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-top: 1.5rem; }
+    .download-btn:hover:not(:disabled) { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 20px var(--accent-glow); }
+    .download-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .status { text-align: center; padding: 1rem; margin-top: 1rem; border-radius: 8px; display: none; }
     .status.visible { display: block; }
-    
-    .status.loading {
-      background: var(--surface-2);
-      color: var(--text-dim);
-    }
-    
-    .status.error {
-      background: rgba(255,107,107,0.1);
-      color: var(--error);
-    }
-    
-    .status.success {
-      background: rgba(0,206,201,0.1);
-      color: var(--success);
-    }
-    
-    .spinner {
-      display: inline-block;
-      width: 18px;
-      height: 18px;
-      border: 2px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      vertical-align: middle;
-      margin-left: 0.5rem;
-    }
-    
+    .status.loading { background: var(--surface-2); color: var(--text-dim); }
+    .status.error { background: rgba(255,107,107,0.1); color: var(--error); }
+    .status.success { background: rgba(0,206,201,0.1); color: var(--success); }
+    .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-left: 0.5rem; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    
-    /* History */
-    .history-title {
-      font-size: 0.9rem;
-      color: var(--text-dim);
-      margin-bottom: 0.75rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .clear-btn {
-      background: none;
-      border: none;
-      color: var(--error);
-      cursor: pointer;
-      font-size: 0.8rem;
-      opacity: 0.7;
-      transition: opacity 0.2s;
-    }
-    
+    .video-info { margin-top: 1rem; display: none; text-align: center; }
+    .video-info.visible { display: block; }
+    .video-info .vi-thumb { width: 100%; max-width: 280px; border-radius: 8px; margin-bottom: 0.75rem; }
+    .video-info .vi-title { font-size: 1rem; font-weight: 600; direction: ltr; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .video-info .vi-meta { font-size: 0.8rem; color: var(--text-dim); margin-top: 0.3rem; }
+    .results { margin-top: 1rem; display: none; }
+    .results.visible { display: block; }
+    .section-label { font-size: 0.8rem; color: var(--text-dim); margin: 0.75rem 0 0.4rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--border); }
+    .result-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 0.5rem; }
+    .result-item .result-info { flex: 1; min-width: 0; }
+    .result-item .result-quality { font-size: 0.9rem; color: var(--text); font-weight: 600; }
+    .result-item .result-name { font-size: 0.72rem; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; direction: ltr; text-align: left; margin-top: 0.15rem; }
+    .result-item .result-meta { font-size: 0.7rem; color: var(--text-dim); margin-top: 0.1rem; opacity: 0.7; }
+    .btn-group { display: flex; gap: 0.4rem; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+    .dl-btn { padding: 0.5rem 1rem; background: var(--success); color: #000; border: none; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer; white-space: nowrap; text-decoration: none; transition: opacity 0.2s; }
+    .dl-btn:hover { opacity: 0.85; }
+    .merge-btn { padding: 0.5rem 0.8rem; background: var(--accent); color: white; border: none; border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: opacity 0.2s; }
+    .merge-btn:hover { opacity: 0.85; }
+    .merge-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; display: none; align-items: center; justify-content: center; }
+    .merge-overlay.visible { display: flex; }
+    .merge-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; max-width: 420px; width: 90%; text-align: center; }
+    .merge-box h3 { margin-bottom: 0.5rem; font-size: 1.1rem; }
+    .merge-box .merge-step { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem; min-height: 1.2em; }
+    .merge-box .merge-error { font-size: 0.82rem; color: var(--error); margin-bottom: 1rem; min-height: 1.2em; display: none; }
+    .merge-box .merge-error.visible { display: block; }
+    .progress-bar { width: 100%; height: 6px; background: var(--surface-2); border-radius: 3px; overflow: hidden; margin-bottom: 0.5rem; }
+    .progress-bar .fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--success)); border-radius: 3px; transition: width 0.3s; width: 0%; }
+    .merge-box .merge-pct { font-size: 0.8rem; color: var(--accent); }
+    .merge-box .merge-close { margin-top: 1rem; padding: 0.5rem 1.5rem; background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; color: var(--text-dim); cursor: pointer; font-size: 0.85rem; display: none; }
+    .merge-box .merge-close.visible { display: inline-block; }
+    .playlist-info { text-align: center; margin-bottom: 1rem; }
+    .playlist-info .pl-name { font-size: 1.1rem; font-weight: 600; }
+    .playlist-info .pl-count { font-size: 0.85rem; color: var(--text-dim); margin-top: 0.3rem; }
+    .playlist-videos { max-height: 350px; overflow-y: auto; }
+    .playlist-videos::-webkit-scrollbar { width: 4px; }
+    .playlist-videos::-webkit-scrollbar-track { background: transparent; }
+    .playlist-videos::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    .pl-video { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border); }
+    .pl-video:last-child { border-bottom: none; }
+    .pl-video .pl-num { color: var(--text-dim); font-size: 0.8rem; min-width: 24px; text-align: center; }
+    .pl-video .pl-thumb { width: 80px; height: 45px; border-radius: 4px; object-fit: cover; background: var(--surface-2); }
+    .pl-video .pl-details { flex: 1; min-width: 0; }
+    .pl-video .pl-title { font-size: 0.85rem; direction: ltr; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pl-video .pl-dur { font-size: 0.75rem; color: var(--text-dim); margin-top: 0.15rem; }
+    .pl-video .dl-btn { padding: 0.4rem 0.8rem; background: var(--accent); color: white; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .pl-video .dl-btn:hover { background: var(--accent-hover); }
+    .history-title { font-size: 0.9rem; color: var(--text-dim); margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center; }
+    .clear-btn { background: none; border: none; color: var(--error); cursor: pointer; font-size: 0.8rem; opacity: 0.7; transition: opacity 0.2s; }
     .clear-btn:hover { opacity: 1; }
-    
-    .history-list {
-      max-height: 250px;
-      overflow-y: auto;
-    }
-    
-    .history-item {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.6rem 0;
-      border-bottom: 1px solid var(--border);
-      font-size: 0.85rem;
-    }
-    
-    .history-item:last-child { border-bottom: none; }
-    
-    .history-item .format-badge {
-      background: var(--accent);
-      color: white;
-      padding: 0.15rem 0.5rem;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      white-space: nowrap;
-    }
-    
-    .history-item .history-url {
-      flex: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      color: var(--text-dim);
-      direction: ltr;
-      text-align: left;
-    }
-    
-    .history-item .history-time {
-      color: var(--text-dim);
-      font-size: 0.75rem;
-      white-space: nowrap;
-    }
-    
-    .history-empty {
-      color: var(--text-dim);
-      font-size: 0.85rem;
-      text-align: center;
-      padding: 1rem;
-      opacity: 0.5;
-    }
-    
-    footer {
-      text-align: center;
-      padding: 1.5rem;
-      color: var(--text-dim);
-      font-size: 0.8rem;
-      border-top: 1px solid var(--border);
-      margin-top: auto;
-    }
-    
-    /* Custom scrollbar */
+    .history-list { max-height: 250px; overflow-y: auto; }
     .history-list::-webkit-scrollbar { width: 4px; }
     .history-list::-webkit-scrollbar-track { background: transparent; }
     .history-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-    
-    @media (max-width: 480px) {
-      header h1 { font-size: 1.5rem; }
-      .options { flex-direction: column; }
-      .option-btn { min-width: auto; }
-    }
+    .history-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+    .history-item:last-child { border-bottom: none; }
+    .history-item .format-badge { background: var(--accent); color: white; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; white-space: nowrap; }
+    .history-item .history-url { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-dim); direction: ltr; text-align: left; }
+    .history-item .history-time { color: var(--text-dim); font-size: 0.75rem; white-space: nowrap; }
+    .history-empty { color: var(--text-dim); font-size: 0.85rem; text-align: center; padding: 1rem; opacity: 0.5; }
+    footer { text-align: center; padding: 1.5rem; color: var(--text-dim); font-size: 0.8rem; border-top: 1px solid var(--border); margin-top: auto; }
+    @media (max-width: 480px) { header h1 { font-size: 1.5rem; } .options { flex-direction: column; } .option-btn { min-width: auto; } .btn-group { flex-direction: column; } .dl-btn, .merge-btn { width: 100%; text-align: center; } }
   </style>
 </head>
 <body>
   <header>
     <h1>محمل الفيديوهات</h1>
-    <p>حمّل من أي منصة — يوتيوب، فيسبوك، تويتر، انستغرام وغيرها</p>
+    <p>حمّل فيديوهات وقوائم تشغيل يوتيوب</p>
   </header>
-  
+
   <main>
     <div class="card">
-      <label for="url">رابط الفيديو</label>
-      <input 
-        type="url" 
-        id="url" 
-        class="url-input" 
-        placeholder="https://www.youtube.com/watch?v=..."
-        autocomplete="off"
-      >
-      
+      <label for="url">رابط الفيديو أو قائمة التشغيل</label>
+      <input type="url" id="url" class="url-input" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off">
       <label style="margin-top: 1rem;">نوع التحميل</label>
       <div class="options">
-        <button class="option-btn active" data-format="merged" onclick="setFormat(this)">صوت + صورة</button>
-        <button class="option-btn" data-format="video" onclick="setFormat(this)">صورة فقط</button>
+        <button class="option-btn active" data-format="video" onclick="setFormat(this)">صوت + صورة</button>
         <button class="option-btn" data-format="audio" onclick="setFormat(this)">صوت فقط</button>
       </div>
-      
-      <div id="qualityRow" class="quality-row">
-        <label>الجودة</label>
-        <div class="options quality-options">
-          <button class="option-btn active" data-quality="" onclick="setQuality(this)">أفضل</button>
-          <button class="option-btn" data-quality="720" onclick="setQuality(this)">720p</button>
-          <button class="option-btn" data-quality="480" onclick="setQuality(this)">480p</button>
-          <button class="option-btn" data-quality="360" onclick="setQuality(this)">360p</button>
-        </div>
-      </div>
-      
       <div id="status" class="status"></div>
-      
-      <button id="downloadBtn" class="download-btn" onclick="startDownload()">
-        تحميل
-      </button>
+      <div id="videoInfo" class="video-info"></div>
+      <div id="results" class="results"></div>
+      <button id="downloadBtn" class="download-btn" onclick="startDownload()">تحميل</button>
     </div>
-    
     <div class="card">
       <div class="history-title">
         <span>السجل</span>
@@ -365,187 +130,229 @@
       </div>
     </div>
   </main>
-  
-  <footer>
-    يدعم أكثر من 1000 منصة فيديو عبر yt-dlp
-  </footer>
+
+  <div id="mergeOverlay" class="merge-overlay">
+    <div class="merge-box">
+      <h3 id="mergeTitle">جارٍ دمج الفيديو مع الصوت</h3>
+      <div id="mergeStep" class="merge-step">جارٍ التحميل...</div>
+      <div id="mergeError" class="merge-error"></div>
+      <div class="progress-bar"><div id="mergeFill" class="fill"></div></div>
+      <div id="mergePct" class="merge-pct">0%</div>
+      <button id="mergeClose" class="merge-close" onclick="closeMerge()">إغلاق</button>
+    </div>
+  </div>
+
+  <footer>محمل فيديوهات يوتيوب مجاني</footer>
 
   <script>
-    // --- Config ---
-    const API_BASE = window.API_BASE || '';
-    
-    // --- State ---
-    let selectedFormat = 'merged';
-    let selectedQuality = '';
-    let isDownloading = false;
-    
-    // --- IndexedDB ---
-    function openDB() {
-      return new Promise((resolve, reject) => {
-        const req = indexedDB.open('VideoDownloader', 1);
-        req.onupgradeneeded = (e) => {
-          const db = e.target.result;
-          if (!db.objectStoreNames.contains('history')) {
-            db.createObjectStore('history', { keyPath: 'id', autoIncrement: true });
-          }
-        };
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
+    var API_URL = 'https://video-translate.dlod6929.workers.dev/api/proxy';
+    var WORKER_BASE = 'https://video-translate.dlod6929.workers.dev';
+    var selectedFormat = 'video';
+    var isDownloading = false;
+    var lastVideoId = null;
+    var lastClientName = 0;
+
+    function openDB() { return new Promise(function(resolve, reject) { var req = indexedDB.open('VideoDownloader', 1); req.onupgradeneeded = function(e) { var db = e.target.result; if (!db.objectStoreNames.contains('history')) db.createObjectStore('history', { keyPath: 'id', autoIncrement: true }); }; req.onsuccess = function() { resolve(req.result); }; req.onerror = function() { reject(req.error); }; }); }
+    function addToHistory(url, format, title) { try { var db = openDB().then(function(db) { var tx = db.transaction('history', 'readwrite'); tx.objectStore('history').add({ url: url, format: format, title: title, timestamp: Date.now() }); return new Promise(function(r, j) { tx.oncomplete = r; tx.onerror = j; }); }); db.then(renderHistory); } catch (e) { console.error(e); } }
+    function getHistory() { try { return openDB().then(function(db) { var tx = db.transaction('history', 'readonly'); var r = tx.objectStore('history').getAll(); return new Promise(function(res) { r.onsuccess = function() { res(r.result.reverse()); }; }); }); } catch (e) { return Promise.resolve([]); } }
+    function clearHistory() { try { var db = openDB().then(function(db) { var tx = db.transaction('history', 'readwrite'); tx.objectStore('history').clear(); return new Promise(function(r, j) { tx.oncomplete = r; tx.onerror = j; }); }); db.then(renderHistory); } catch (e) { console.error(e); } }
+
+    function fmtTime(ts) { return new Date(ts).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }); }
+    function fmtDur(s) { if (!s) return '0:00'; var m = Math.floor(s / 60); return m + ':' + String(s % 60).padStart(2, '0'); }
+    function fmtSize(bytes) { if (!bytes) return ''; if (bytes < 1024) return bytes + 'B'; if (bytes < 1048576) return (bytes / 1024).toFixed(0) + 'KB'; if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + 'MB'; return (bytes / 1073741824).toFixed(2) + 'GB'; }
+
+    function setFormat(btn) { document.querySelectorAll('.options .option-btn').forEach(function(b) { b.classList.remove('active'); }); btn.classList.add('active'); selectedFormat = btn.dataset.format; }
+    function showStatus(type, msg) { var el = document.getElementById('status'); el.className = 'status visible ' + type; el.innerHTML = type === 'loading' ? '<span class="spinner"></span> ' + msg : msg; }
+    function hideStatus() { document.getElementById('status').className = 'status'; }
+
+    function showVideoInfo(data) {
+      var el = document.getElementById('videoInfo');
+      el.className = 'video-info visible';
+      el.innerHTML = '<img class="vi-thumb" src="' + (data.thumbnail || '') + '" alt="">' +
+        '<div class="vi-title">' + (data.title || '') + '</div>' +
+        '<div class="vi-meta">' + (data.uploader || '') + ' &bull; ' + fmtDur(data.duration || 0) + '</div>';
+    }
+
+    function showResults(data) {
+      var el = document.getElementById('results');
+      var results = data.results || [];
+      var combined = results.filter(function(r) { return r.type === 'combined'; });
+      var videoOnly = results.filter(function(r) { return r.type === 'video'; });
+      var audioOnly = results.filter(function(r) { return r.type === 'audio'; });
+      var bestAudio = audioOnly[0] || null;
+      var html = '';
+
+      if (combined.length > 0) {
+        html += '<div class="section-label">فيديو + صوت (جاهز للتحميل)</div>';
+        for (var i = 0; i < combined.length; i++) {
+          var r = combined[i];
+          var meta = (r.size ? fmtSize(r.size) : '') + (r.mimeType ? ' · ' + r.mimeType.split(';')[0] : '');
+          html += '<div class="result-item"><div class="result-info"><div class="result-quality">' + r.quality + '</div><div class="result-name">' + r.filename + '</div>' + (meta ? '<div class="result-meta">' + meta + '</div>' : '') + '</div><div class="btn-group"><a class="dl-btn" href="' + r.url + '" target="_blank" rel="noopener">تحميل</a></div></div>';
+        }
+      }
+
+      if (videoOnly.length > 0) {
+        html += '<div class="section-label">فيديو فقط (اضغط "تحميل مع صوت" لدمج الصوت مع الصورة)</div>';
+        for (var i = 0; i < videoOnly.length; i++) {
+          var r = videoOnly[i];
+          var meta = (r.size ? fmtSize(r.size) : '') + (r.mimeType ? ' · ' + r.mimeType.split(';')[0] : '');
+          var canMerge = !!bestAudio;
+          var safeFilename = (r.filename || '').replace(/'/g, "\\'").replace(/[\[\]]/g, '');
+          var baseName = safeFilename.replace(/ \[فيديو فقط\].*/, '').trim();
+          html += '<div class="result-item"><div class="result-info"><div class="result-quality">' + r.quality + '</div><div class="result-name">' + r.filename + '</div>' + (meta ? '<div class="result-meta">' + meta + '</div>' : '') + '</div><div class="btn-group">' +
+            (canMerge ? '<button class="merge-btn" onclick="mergeDownload(' + r.itag + ', ' + bestAudio.itag + ', \'' + baseName + '\')">تحميل مع صوت</button>' : '') +
+            '<a class="dl-btn" href="' + r.url + '" target="_blank" rel="noopener">بدون صوت</a></div></div>';
+        }
+      }
+
+      if (audioOnly.length > 0) {
+        html += '<div class="section-label">صوت فقط</div>';
+        for (var i = 0; i < audioOnly.length; i++) {
+          var r = audioOnly[i];
+          var meta = (r.size ? fmtSize(r.size) : '') + (r.mimeType ? ' · ' + r.mimeType.split(';')[0] : '');
+          html += '<div class="result-item"><div class="result-info"><div class="result-quality">' + r.quality + '</div><div class="result-name">' + r.filename + '</div>' + (meta ? '<div class="result-meta">' + meta + '</div>' : '') + '</div><div class="btn-group"><a class="dl-btn" href="' + r.url + '" target="_blank" rel="noopener">تحميل</a></div></div>';
+        }
+      }
+
+      el.innerHTML = html;
+      el.className = 'results visible';
+    }
+
+    function showPlaylist(data) {
+      var el = document.getElementById('results');
+      el.className = 'results visible';
+      var html = '<div class="playlist-info"><div class="pl-name">' + data.name + '</div><div class="pl-count">' + data.videos.length + ' فيديو</div></div><div class="playlist-videos">';
+      for (var i = 0; i < data.videos.length; i++) {
+        var v = data.videos[i];
+        html += '<div class="pl-video"><span class="pl-num">' + (i + 1) + '</span>' + (v.thumbnail ? '<img class="pl-thumb" src="' + v.thumbnail + '" alt="">' : '') + '<div class="pl-details"><div class="pl-title" title="' + v.title + '">' + v.title + '</div><div class="pl-dur">' + fmtDur(v.duration || 0) + '</div></div><button class="dl-btn" onclick="downloadFromPlaylist(\'' + v.videoId + '\')">تحميل</button></div>';
+      }
+      html += '</div>';
+      el.innerHTML = html;
+    }
+
+    // Server-side merge — no FFmpeg, no SharedArrayBuffer needed!
+    function mergeDownload(videoItag, audioItag, filename) {
+      if (!lastVideoId) { showStatus('error', 'لا يوجد فيديو محدد'); return; }
+
+      var overlay = document.getElementById('mergeOverlay');
+      overlay.classList.add('visible');
+      document.getElementById('mergeError').classList.remove('visible');
+      document.getElementById('mergeClose').classList.remove('visible');
+      document.getElementById('mergeTitle').textContent = 'جارٍ دمج الفيديو مع الصوت';
+      showMergeProgress('جارٍ إرسال طلب الدمج للسيرفر...', 10);
+
+      var mergeUrl = WORKER_BASE + '/api/merge?videoId=' + lastVideoId + '&videoItag=' + videoItag + '&audioItag=' + audioItag + '&filename=' + encodeURIComponent(filename) + '&c=' + lastClientName;
+
+      showMergeProgress('جارٍ تحميل الفيديو والصوت ودمجهم...', 20);
+
+      fetch(mergeUrl).then(function(resp) {
+        if (!resp.ok) return resp.text().then(function(t) { throw new Error(t || 'HTTP ' + resp.status); });
+
+        showMergeProgress('جارٍ تحميل الملف المدمج...', 70);
+
+        var contentLength = parseInt(resp.headers.get('Content-Length') || '0');
+        var reader = resp.body.getReader();
+        var chunks = [];
+        var received = 0;
+
+        function pump() {
+          return reader.read().then(function(result) {
+            if (result.done) {
+              var blob = new Blob(chunks, { type: 'video/mp4' });
+              var blobUrl = URL.createObjectURL(blob);
+              var a = document.createElement('a');
+              a.href = blobUrl; a.download = filename + '.mp4';
+              document.body.appendChild(a); a.click(); document.body.removeChild(a);
+              setTimeout(function() { URL.revokeObjectURL(blobUrl); }, 10000);
+              showMergeProgress('تم بنجاح! جارٍ التحميل...', 100);
+              document.getElementById('mergeTitle').textContent = 'تم الدمج بنجاح!';
+              setTimeout(closeMerge, 2000);
+              return;
+            }
+            chunks.push(result.value);
+            received += result.value.length;
+            if (contentLength > 0) {
+              var pct = 70 + (received / contentLength) * 28;
+              showMergeProgress('جارٍ تحميل الملف المدمج...', Math.min(pct, 98));
+            }
+            return pump();
+          });
+        }
+        return pump();
+      }).catch(function(e) {
+        console.error('Merge error:', e);
+        document.getElementById('mergeError').textContent = 'فشل الدمج: ' + e.message;
+        document.getElementById('mergeError').classList.add('visible');
+        document.getElementById('mergeClose').classList.add('visible');
+        document.getElementById('mergeTitle').textContent = 'فشل الدمج';
       });
     }
-    
-    async function addToHistory(url, format, filename) {
-      try {
-        const db = await openDB();
-        const tx = db.transaction('history', 'readwrite');
-        tx.objectStore('history').add({
-          url, format, filename,
-          timestamp: Date.now()
-        });
-        await new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = rej; });
-        renderHistory();
-      } catch (e) { console.error('DB error:', e); }
+
+    function showMergeProgress(step, pct) {
+      document.getElementById('mergeStep').textContent = step;
+      document.getElementById('mergeFill').style.width = pct + '%';
+      document.getElementById('mergePct').textContent = Math.round(pct) + '%';
     }
-    
-    async function getHistory() {
-      try {
-        const db = await openDB();
-        const tx = db.transaction('history', 'readonly');
-        const store = tx.objectStore('history');
-        const req = store.getAll();
-        return new Promise((resolve) => {
-          req.onsuccess = () => resolve(req.result.reverse());
-        });
-      } catch { return []; }
+
+    function closeMerge() {
+      document.getElementById('mergeOverlay').classList.remove('visible');
+      document.getElementById('mergeError').classList.remove('visible');
+      document.getElementById('mergeClose').classList.remove('visible');
+      document.getElementById('mergeFill').style.width = '0%';
+      document.getElementById('mergePct').textContent = '0%';
     }
-    
-    async function clearHistory() {
-      try {
-        const db = await openDB();
-        const tx = db.transaction('history', 'readwrite');
-        tx.objectStore('history').clear();
-        await new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = rej; });
-        renderHistory();
-      } catch (e) { console.error('DB error:', e); }
+
+    function downloadFromPlaylist(videoId) {
+      var videoUrl = 'https://www.youtube.com/watch?v=' + videoId;
+      document.getElementById('url').value = videoUrl;
+      startDownload();
     }
-    
-    function formatTime(ts) {
-      const d = new Date(ts);
-      return d.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
-    }
-    
-    async function renderHistory() {
-      const list = document.getElementById('historyList');
-      const items = await getHistory();
-      if (items.length === 0) {
-        list.innerHTML = '<div class="history-empty">لا توجد عمليات تحميل سابقة</div>';
-        return;
-      }
-      const formatLabels = { audio: 'صوت', video: 'فيديو', merged: 'دمج' };
-      list.innerHTML = items.map(item => `
-        <div class="history-item">
-          <span class="format-badge">${formatLabels[item.format] || item.format}</span>
-          <span class="history-url" title="${item.url}">${item.url}</span>
-          <span class="history-time">${formatTime(item.timestamp)}</span>
-        </div>
-      `).join('');
-    }
-    
-    // --- UI Controls ---
-    function setFormat(btn) {
-      document.querySelectorAll('.options:not(.quality-options) .option-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      selectedFormat = btn.dataset.format;
-      const qr = document.getElementById('qualityRow');
-      qr.classList.toggle('visible', selectedFormat === 'video');
-    }
-    
-    function setQuality(btn) {
-      document.querySelectorAll('.quality-options .option-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      selectedQuality = btn.dataset.quality;
-    }
-    
-    function showStatus(type, msg) {
-      const el = document.getElementById('status');
-      el.className = 'status visible ' + type;
-      if (type === 'loading') {
-        el.innerHTML = `<span class="spinner"></span> ${msg}`;
-      } else {
-        el.textContent = msg;
-      }
-    }
-    
-    function hideStatus() {
-      document.getElementById('status').className = 'status';
-    }
-    
-    // --- Download ---
+
     async function startDownload() {
       if (isDownloading) return;
-      
-      const url = document.getElementById('url').value.trim();
-      if (!url) {
-        showStatus('error', 'الرجاء إدخال رابط الفيديو');
-        return;
-      }
-      
+      var urlVal = document.getElementById('url').value.trim();
+      if (!urlVal) { showStatus('error', 'الرجاء إدخال رابط الفيديو'); return; }
       isDownloading = true;
-      const btn = document.getElementById('downloadBtn');
-      btn.disabled = true;
-      btn.textContent = 'جارٍ التحميل...';
-      showStatus('loading', 'جارٍ جلب الفيديو والتحميل... قد يستغرق هذا بعض الوقت');
-      
+      var btn = document.getElementById('downloadBtn');
+      btn.disabled = true; btn.textContent = 'جارٍ البحث...';
+      showStatus('loading', 'جارٍ البحث...');
+      document.getElementById('videoInfo').className = 'video-info';
+      document.getElementById('results').className = 'results';
       try {
-        const body = { url, format: selectedFormat };
-        if (selectedQuality) body.quality = selectedQuality;
-        
-        const resp = await fetch(`${API_BASE}/api/download`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
-        
-        if (!resp.ok) {
-          const err = await resp.json().catch(() => ({ detail: 'فشل التحميل' }));
-          throw new Error(err.detail || 'فشل التحميل');
-        }
-        
-        // Get filename from header
-        const contentDisp = resp.headers.get('content-disposition') || '';
-        const filenameMatch = contentDisp.match(/filename\*?=(?:UTF-8''|"?)([^";]+)/i);
-        const filename = filenameMatch ? decodeURIComponent(filenameMatch[1].replace(/"/g, '')) : 'download';
-        
-        // Download as blob
-        const blob = await resp.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(blobUrl);
-        
-        showStatus('success', 'تم التحميل بنجاح!');
-        await addToHistory(url, selectedFormat, filename);
-        
-        setTimeout(hideStatus, 3000);
-      } catch (e) {
-        showStatus('error', e.message || 'حدث خطأ أثناء التحميل');
-      } finally {
-        isDownloading = false;
-        btn.disabled = false;
-        btn.textContent = 'تحميل';
-      }
+        var resp = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: urlVal, downloadMode: selectedFormat }) });
+        var data = await resp.json();
+        if (data.error) { var errMsg = data.error; if (data.details && data.details.length) errMsg += ': ' + data.details.slice(0, 3).join(' | '); throw new Error(errMsg); }
+        if (data.status === 'success') {
+          lastVideoId = new URL(urlVal).searchParams.get('v') || '';
+          lastClientName = data.clientName || 0;
+          showVideoInfo(data);
+          showResults(data);
+          await addToHistory(urlVal, selectedFormat, data.title);
+          showStatus('success', 'تم! ' + data.results.length + ' صيغة متوفرة');
+          setTimeout(hideStatus, 3000);
+        } else if (data.status === 'playlist') {
+          showPlaylist(data);
+          await addToHistory(urlVal, 'playlist', data.name);
+          showStatus('success', 'قائمة: ' + data.videos.length + ' فيديو');
+          setTimeout(hideStatus, 3000);
+        } else { throw new Error('استجابة غير متوقعة من السيرفر'); }
+      } catch (e) { showStatus('error', e.message || 'فشل التحميل'); } finally { isDownloading = false; btn.disabled = false; btn.textContent = 'تحميل'; }
     }
-    
-    // Enter key to download
-    document.getElementById('url').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') startDownload();
-    });
-    
-    // Load history on start
+
+    async function renderHistory() {
+      var list = document.getElementById('historyList');
+      var items = await getHistory();
+      if (!items.length) { list.innerHTML = '<div class="history-empty">لا توجد عمليات تحميل سابقة</div>'; return; }
+      var labels = { audio: 'صوت', video: 'فيديو', playlist: 'قائمة' };
+      var html = '';
+      for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+        html += '<div class="history-item"><span class="format-badge">' + (labels[item.format] || item.format) + '</span><span class="history-url" title="' + item.url + '">' + (item.title || item.url) + '</span><span class="history-time">' + fmtTime(item.timestamp) + '</span></div>';
+      }
+      list.innerHTML = html;
+    }
+
+    document.getElementById('url').addEventListener('keydown', function(e) { if (e.key === 'Enter') startDownload(); });
     renderHistory();
   </script>
 </body>
