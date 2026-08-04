@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>محمل الفيديوهات</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -51,10 +52,11 @@
     .result-item .result-name { font-size: 0.72rem; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; direction: ltr; text-align: left; margin-top: 0.15rem; }
     .result-item .result-meta { font-size: 0.7rem; color: var(--text-dim); margin-top: 0.1rem; opacity: 0.7; }
     .btn-group { display: flex; gap: 0.4rem; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
-    .dl-btn { padding: 0.5rem 1rem; background: var(--success); color: #000; border: none; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer; white-space: nowrap; text-decoration: none; transition: opacity 0.2s; }
+    .dl-btn { padding: 0.5rem 1rem; background: var(--success); color: #000; border: none; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer; white-space: nowrap; text-decoration: none; transition: opacity 0.2s; display: inline-block; }
     .dl-btn:hover { opacity: 0.85; }
     .merge-btn { padding: 0.5rem 0.8rem; background: var(--accent); color: white; border: none; border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: opacity 0.2s; }
     .merge-btn:hover { opacity: 0.85; }
+    .merge-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .merge-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; display: none; align-items: center; justify-content: center; }
     .merge-overlay.visible { display: flex; }
     .merge-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; max-width: 420px; width: 90%; text-align: center; }
@@ -144,31 +146,125 @@
 
   <footer>محمل فيديوهات يوتيوب مجاني</footer>
 
-  <script>
-    var API_URL = 'https://video-translate.dlod6929.workers.dev/api/proxy';
-    var WORKER_BASE = 'https://video-translate.dlod6929.workers.dev';
-    var selectedFormat = 'video';
-    var isDownloading = false;
-    var lastVideoId = null;
-    var lastClientName = 0;
+  <script type="module">
+    // FFmpeg.wasm 0.12.x - Single-threaded (no SharedArrayBuffer needed!)
+    import { FFmpeg } from 'https://esm.sh/@ffmpeg/ffmpeg@0.12.10';
+    import { fetchFile, toBlobURL } from 'https://esm.sh/@ffmpeg/util@0.12.1';
 
-    function openDB() { return new Promise(function(resolve, reject) { var req = indexedDB.open('VideoDownloader', 1); req.onupgradeneeded = function(e) { var db = e.target.result; if (!db.objectStoreNames.contains('history')) db.createObjectStore('history', { keyPath: 'id', autoIncrement: true }); }; req.onsuccess = function() { resolve(req.result); }; req.onerror = function() { reject(req.error); }; }); }
-    function addToHistory(url, format, title) { try { var db = openDB().then(function(db) { var tx = db.transaction('history', 'readwrite'); tx.objectStore('history').add({ url: url, format: format, title: title, timestamp: Date.now() }); return new Promise(function(r, j) { tx.oncomplete = r; tx.onerror = j; }); }); db.then(renderHistory); } catch (e) { console.error(e); } }
-    function getHistory() { try { return openDB().then(function(db) { var tx = db.transaction('history', 'readonly'); var r = tx.objectStore('history').getAll(); return new Promise(function(res) { r.onsuccess = function() { res(r.result.reverse()); }; }); }); } catch (e) { return Promise.resolve([]); } }
-    function clearHistory() { try { var db = openDB().then(function(db) { var tx = db.transaction('history', 'readwrite'); tx.objectStore('history').clear(); return new Promise(function(r, j) { tx.oncomplete = r; tx.onerror = j; }); }); db.then(renderHistory); } catch (e) { console.error(e); } }
+    const API_URL = 'https://video-translate.dlod6929.workers.dev/api/proxy';
+    let selectedFormat = 'video';
+    let isDownloading = false;
+    let lastResults = [];
+    let ffmpegInstance = null;
+    let ffmpegLoadPromise = null;
 
+    // Expose to global scope for onclick handlers
+    window.setFormat = setFormat;
+    window.startDownload = startDownload;
+    window.clearHistory = clearHistory;
+    window.closeMerge = closeMerge;
+    window.mergeDownload = mergeDownload;
+    window.downloadFromPlaylist = downloadFromPlaylist;
+
+    async function loadFFmpeg() {
+      if (ffmpegInstance && ffmpegInstance.loaded) return ffmpegInstance;
+      if (ffmpegLoadPromise) return ffmpegLoadPromise;
+
+      ffmpegLoadPromise = (async () => {
+        try {
+          const ffmpeg = new FFmpeg();
+
+          // Use single-threaded core - works on ANY hosting (no COOP/COEP needed)
+          const baseURL = 'https://unpkg.com/@ffmpeg/core-st@0.12.6/dist/esm';
+          const coreURL = await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript');
+          const wasmURL = await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm');
+
+          await ffmpeg.load({ coreURL, wasmURL });
+          ffmpegInstance = ffmpeg;
+          return ffmpeg;
+        } catch (e) {
+          console.error('FFmpeg load error:', e);
+          ffmpegLoadPromise = null;
+          throw new Error('فشل تحميل محرك الدمج: ' + e.message);
+        }
+      })();
+
+      return ffmpegLoadPromise;
+    }
+
+    // IndexedDB helpers
+    function openDB() {
+      return new Promise(function(resolve, reject) {
+        var req = indexedDB.open('VideoDownloader', 1);
+        req.onupgradeneeded = function(e) {
+          var db = e.target.result;
+          if (!db.objectStoreNames.contains('history')) db.createObjectStore('history', { keyPath: 'id', autoIncrement: true });
+        };
+        req.onsuccess = function() { resolve(req.result); };
+        req.onerror = function() { reject(req.error); };
+      });
+    }
+
+    function addToHistory(url, format, title) {
+      try {
+        openDB().then(function(db) {
+          var tx = db.transaction('history', 'readwrite');
+          tx.objectStore('history').add({ url, format, title, timestamp: Date.now() });
+          return new Promise(function(r, j) { tx.oncomplete = r; tx.onerror = j; });
+        }).then(renderHistory);
+      } catch (e) { console.error(e); }
+    }
+
+    function getHistory() {
+      try {
+        return openDB().then(function(db) {
+          var tx = db.transaction('history', 'readonly');
+          var r = tx.objectStore('history').getAll();
+          return new Promise(function(res) { r.onsuccess = function() { res(r.result.reverse()); }; });
+        });
+      } catch (e) { return Promise.resolve([]); }
+    }
+
+    function clearHistory() {
+      try {
+        openDB().then(function(db) {
+          var tx = db.transaction('history', 'readwrite');
+          tx.objectStore('history').clear();
+          return new Promise(function(r, j) { tx.oncomplete = r; tx.onerror = j; });
+        }).then(renderHistory);
+      } catch (e) { console.error(e); }
+    }
+
+    // Format helpers
     function fmtTime(ts) { return new Date(ts).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }); }
     function fmtDur(s) { if (!s) return '0:00'; var m = Math.floor(s / 60); return m + ':' + String(s % 60).padStart(2, '0'); }
-    function fmtSize(bytes) { if (!bytes) return ''; if (bytes < 1024) return bytes + 'B'; if (bytes < 1048576) return (bytes / 1024).toFixed(0) + 'KB'; if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + 'MB'; return (bytes / 1073741824).toFixed(2) + 'GB'; }
+    function fmtSize(bytes) {
+      if (!bytes) return '';
+      if (bytes < 1024) return bytes + 'B';
+      if (bytes < 1048576) return (bytes / 1024).toFixed(0) + 'KB';
+      if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + 'MB';
+      return (bytes / 1073741824).toFixed(2) + 'GB';
+    }
 
-    function setFormat(btn) { document.querySelectorAll('.options .option-btn').forEach(function(b) { b.classList.remove('active'); }); btn.classList.add('active'); selectedFormat = btn.dataset.format; }
-    function showStatus(type, msg) { var el = document.getElementById('status'); el.className = 'status visible ' + type; el.innerHTML = type === 'loading' ? '<span class="spinner"></span> ' + msg : msg; }
+    function setFormat(btn) {
+      document.querySelectorAll('.options .option-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      selectedFormat = btn.dataset.format;
+    }
+
+    function showStatus(type, msg) {
+      var el = document.getElementById('status');
+      el.className = 'status visible ' + type;
+      el.innerHTML = type === 'loading' ? '<span class="spinner"></span> ' + msg : msg;
+    }
+
     function hideStatus() { document.getElementById('status').className = 'status'; }
 
     function showVideoInfo(data) {
       var el = document.getElementById('videoInfo');
       el.className = 'video-info visible';
-      el.innerHTML = '<img class="vi-thumb" src="' + (data.thumbnail || '') + '" alt="">' +
+      el.innerHTML =
+        '<img class="vi-thumb" src="' + (data.thumbnail || '') + '" alt="">' +
         '<div class="vi-title">' + (data.title || '') + '</div>' +
         '<div class="vi-meta">' + (data.uploader || '') + ' &bull; ' + fmtDur(data.duration || 0) + '</div>';
     }
@@ -176,6 +272,8 @@
     function showResults(data) {
       var el = document.getElementById('results');
       var results = data.results || [];
+      lastResults = results;
+
       var combined = results.filter(function(r) { return r.type === 'combined'; });
       var videoOnly = results.filter(function(r) { return r.type === 'video'; });
       var audioOnly = results.filter(function(r) { return r.type === 'audio'; });
@@ -187,7 +285,7 @@
         for (var i = 0; i < combined.length; i++) {
           var r = combined[i];
           var meta = (r.size ? fmtSize(r.size) : '') + (r.mimeType ? ' · ' + r.mimeType.split(';')[0] : '');
-          html += '<div class="result-item"><div class="result-info"><div class="result-quality">' + r.quality + '</div><div class="result-name">' + r.filename + '</div>' + (meta ? '<div class="result-meta">' + meta + '</div>' : '') + '</div><div class="btn-group"><a class="dl-btn" href="' + r.url + '" target="_blank" rel="noopener">تحميل</a></div></div>';
+          html += '<div class="result-item"><div class="result-info"><div class="result-quality">' + r.quality + '</div><div class="result-name">' + escapeHtml(r.filename) + '</div>' + (meta ? '<div class="result-meta">' + meta + '</div>' : '') + '</div><div class="btn-group"><a class="dl-btn" href="' + r.url + '" target="_blank" rel="noopener">تحميل</a></div></div>';
         }
       }
 
@@ -196,11 +294,9 @@
         for (var i = 0; i < videoOnly.length; i++) {
           var r = videoOnly[i];
           var meta = (r.size ? fmtSize(r.size) : '') + (r.mimeType ? ' · ' + r.mimeType.split(';')[0] : '');
-          var canMerge = !!bestAudio;
-          var safeFilename = (r.filename || '').replace(/'/g, "\\'").replace(/[\[\]]/g, '');
-          var baseName = safeFilename.replace(/ \[فيديو فقط\].*/, '').trim();
-          html += '<div class="result-item"><div class="result-info"><div class="result-quality">' + r.quality + '</div><div class="result-name">' + r.filename + '</div>' + (meta ? '<div class="result-meta">' + meta + '</div>' : '') + '</div><div class="btn-group">' +
-            (canMerge ? '<button class="merge-btn" onclick="mergeDownload(' + r.itag + ', ' + bestAudio.itag + ', \'' + baseName + '\')">تحميل مع صوت</button>' : '') +
+          var baseName = r.filename.replace(/ \[فيديو فقط\].*/, '').trim();
+          html += '<div class="result-item"><div class="result-info"><div class="result-quality">' + r.quality + '</div><div class="result-name">' + escapeHtml(r.filename) + '</div>' + (meta ? '<div class="result-meta">' + meta + '</div>' : '') + '</div><div class="btn-group">' +
+            (bestAudio ? '<button class="merge-btn" onclick="mergeDownload(' + i + ', ' + audioOnly.indexOf(bestAudio) + ', \'' + escapeAttr(baseName) + '\')">تحميل مع صوت</button>' : '') +
             '<a class="dl-btn" href="' + r.url + '" target="_blank" rel="noopener">بدون صوت</a></div></div>';
         }
       }
@@ -210,7 +306,7 @@
         for (var i = 0; i < audioOnly.length; i++) {
           var r = audioOnly[i];
           var meta = (r.size ? fmtSize(r.size) : '') + (r.mimeType ? ' · ' + r.mimeType.split(';')[0] : '');
-          html += '<div class="result-item"><div class="result-info"><div class="result-quality">' + r.quality + '</div><div class="result-name">' + r.filename + '</div>' + (meta ? '<div class="result-meta">' + meta + '</div>' : '') + '</div><div class="btn-group"><a class="dl-btn" href="' + r.url + '" target="_blank" rel="noopener">تحميل</a></div></div>';
+          html += '<div class="result-item"><div class="result-info"><div class="result-quality">' + r.quality + '</div><div class="result-name">' + escapeHtml(r.filename) + '</div>' + (meta ? '<div class="result-meta">' + meta + '</div>' : '') + '</div><div class="btn-group"><a class="dl-btn" href="' + r.url + '" target="_blank" rel="noopener">تحميل</a></div></div>';
         }
       }
 
@@ -218,74 +314,125 @@
       el.className = 'results visible';
     }
 
+    function escapeHtml(s) {
+      if (!s) return '';
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function escapeAttr(s) {
+      if (!s) return '';
+      return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\[/g, '').replace(/\]/g, '');
+    }
+
     function showPlaylist(data) {
       var el = document.getElementById('results');
       el.className = 'results visible';
-      var html = '<div class="playlist-info"><div class="pl-name">' + data.name + '</div><div class="pl-count">' + data.videos.length + ' فيديو</div></div><div class="playlist-videos">';
+      var html = '<div class="playlist-info"><div class="pl-name">' + escapeHtml(data.name) + '</div><div class="pl-count">' + data.videos.length + ' فيديو</div></div><div class="playlist-videos">';
       for (var i = 0; i < data.videos.length; i++) {
         var v = data.videos[i];
-        html += '<div class="pl-video"><span class="pl-num">' + (i + 1) + '</span>' + (v.thumbnail ? '<img class="pl-thumb" src="' + v.thumbnail + '" alt="">' : '') + '<div class="pl-details"><div class="pl-title" title="' + v.title + '">' + v.title + '</div><div class="pl-dur">' + fmtDur(v.duration || 0) + '</div></div><button class="dl-btn" onclick="downloadFromPlaylist(\'' + v.videoId + '\')">تحميل</button></div>';
+        html += '<div class="pl-video"><span class="pl-num">' + (i + 1) + '</span>' +
+          (v.thumbnail ? '<img class="pl-thumb" src="' + v.thumbnail + '" alt="">' : '') +
+          '<div class="pl-details"><div class="pl-title" title="' + escapeHtml(v.title) + '">' + escapeHtml(v.title) + '</div><div class="pl-dur">' + fmtDur(v.duration || 0) + '</div></div>' +
+          '<button class="dl-btn" onclick="downloadFromPlaylist(\'' + v.videoId + '\')">تحميل</button></div>';
       }
       html += '</div>';
       el.innerHTML = html;
     }
 
-    // Server-side merge — no FFmpeg, no SharedArrayBuffer needed!
-    function mergeDownload(videoItag, audioItag, filename) {
-      if (!lastVideoId) { showStatus('error', 'لا يوجد فيديو محدد'); return; }
+    // Client-side FFmpeg merge (works on ANY hosting!)
+    async function mergeDownload(videoIdx, audioIdx, filename) {
+      var videoOnly = lastResults.filter(function(r) { return r.type === 'video'; });
+      var audioOnly = lastResults.filter(function(r) { return r.type === 'audio'; });
+      var videoFormat = videoOnly[videoIdx];
+      var audioFormat = audioOnly[audioIdx];
+
+      if (!videoFormat || !audioFormat) {
+        showStatus('error', 'صيغة غير صالحة');
+        return;
+      }
 
       var overlay = document.getElementById('mergeOverlay');
       overlay.classList.add('visible');
       document.getElementById('mergeError').classList.remove('visible');
       document.getElementById('mergeClose').classList.remove('visible');
       document.getElementById('mergeTitle').textContent = 'جارٍ دمج الفيديو مع الصوت';
-      showMergeProgress('جارٍ إرسال طلب الدمج للسيرفر...', 10);
+      showMergeProgress('جارٍ تحميل محرك الدمج...', 5);
 
-      var mergeUrl = WORKER_BASE + '/api/merge?videoId=' + lastVideoId + '&videoItag=' + videoItag + '&audioItag=' + audioItag + '&filename=' + encodeURIComponent(filename) + '&c=' + lastClientName;
+      try {
+        // Load FFmpeg (single-threaded, no SharedArrayBuffer needed)
+        var ffmpeg = await loadFFmpeg();
+        showMergeProgress('تم تحميل المحرك. جارٍ تحميل الفيديو...', 10);
 
-      showMergeProgress('جارٍ تحميل الفيديو والصوت ودمجهم...', 20);
+        // Download video stream through Worker proxy
+        var videoResp = await fetch(videoFormat.url);
+        if (!videoResp.ok) throw new Error('فشل تحميل الفيديو: HTTP ' + videoResp.status);
+        var videoBlob = await videoResp.blob();
+        var videoExt = (videoFormat.mimeType || '').includes('webm') ? 'webm' : 'mp4';
 
-      fetch(mergeUrl).then(function(resp) {
-        if (!resp.ok) return resp.text().then(function(t) { throw new Error(t || 'HTTP ' + resp.status); });
+        showMergeProgress('جارٍ تحميل الصوت...', 40);
 
-        showMergeProgress('جارٍ تحميل الملف المدمج...', 70);
+        // Download audio stream through Worker proxy
+        var audioResp = await fetch(audioFormat.url);
+        if (!audioResp.ok) throw new Error('فشل تحميل الصوت: HTTP ' + audioResp.status);
+        var audioBlob = await audioResp.blob();
+        var audioExt = (audioFormat.mimeType || '').includes('webm') ? 'webm' : 'm4a';
 
-        var contentLength = parseInt(resp.headers.get('Content-Length') || '0');
-        var reader = resp.body.getReader();
-        var chunks = [];
-        var received = 0;
+        showMergeProgress('جارٍ دمج الفيديو مع الصوت...', 60);
 
-        function pump() {
-          return reader.read().then(function(result) {
-            if (result.done) {
-              var blob = new Blob(chunks, { type: 'video/mp4' });
-              var blobUrl = URL.createObjectURL(blob);
-              var a = document.createElement('a');
-              a.href = blobUrl; a.download = filename + '.mp4';
-              document.body.appendChild(a); a.click(); document.body.removeChild(a);
-              setTimeout(function() { URL.revokeObjectURL(blobUrl); }, 10000);
-              showMergeProgress('تم بنجاح! جارٍ التحميل...', 100);
-              document.getElementById('mergeTitle').textContent = 'تم الدمج بنجاح!';
-              setTimeout(closeMerge, 2000);
-              return;
-            }
-            chunks.push(result.value);
-            received += result.value.length;
-            if (contentLength > 0) {
-              var pct = 70 + (received / contentLength) * 28;
-              showMergeProgress('جارٍ تحميل الملف المدمج...', Math.min(pct, 98));
-            }
-            return pump();
-          });
-        }
-        return pump();
-      }).catch(function(e) {
+        // Write files to FFmpeg virtual filesystem
+        await ffmpeg.writeFile('video.' + videoExt, await fetchFile(videoBlob));
+        await ffmpeg.writeFile('audio.' + audioExt, await fetchFile(audioBlob));
+
+        showMergeProgress('جارٍ معالجة الدمج...', 75);
+
+        // Run FFmpeg merge
+        var safeName = (filename || 'video').replace(/[^a-zA-Z0-9\u0600-\u06FF _-]/g, '').slice(0, 100);
+
+        await ffmpeg.exec([
+          '-i', 'video.' + videoExt,
+          '-i', 'audio.' + audioExt,
+          '-c:v', 'copy',
+          '-c:a', 'aac',
+          '-b:a', '192k',
+          '-map', '0:v:0',
+          '-map', '1:a:0',
+          '-movflags', '+faststart',
+          'output.mp4'
+        ]);
+
+        showMergeProgress('جارٍ تجهيز الملف للتحميل...', 90);
+
+        // Read merged file from FFmpeg
+        var data = await ffmpeg.readFile('output.mp4');
+        var mergedBlob = new Blob([data.buffer], { type: 'video/mp4' });
+        var blobUrl = URL.createObjectURL(mergedBlob);
+
+        // Trigger download
+        var a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = safeName + '.mp4';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function() { URL.revokeObjectURL(blobUrl); }, 30000);
+
+        // Clean up FFmpeg filesystem
+        try {
+          await ffmpeg.deleteFile('video.' + videoExt);
+          await ffmpeg.deleteFile('audio.' + audioExt);
+          await ffmpeg.deleteFile('output.mp4');
+        } catch (e) {}
+
+        showMergeProgress('تم بنجاح! جارٍ التحميل...', 100);
+        document.getElementById('mergeTitle').textContent = 'تم الدمج بنجاح!';
+        setTimeout(closeMerge, 2000);
+      } catch (e) {
         console.error('Merge error:', e);
         document.getElementById('mergeError').textContent = 'فشل الدمج: ' + e.message;
         document.getElementById('mergeError').classList.add('visible');
         document.getElementById('mergeClose').classList.add('visible');
         document.getElementById('mergeTitle').textContent = 'فشل الدمج';
-      });
+      }
     }
 
     function showMergeProgress(step, pct) {
@@ -312,47 +459,84 @@
       if (isDownloading) return;
       var urlVal = document.getElementById('url').value.trim();
       if (!urlVal) { showStatus('error', 'الرجاء إدخال رابط الفيديو'); return; }
+
       isDownloading = true;
       var btn = document.getElementById('downloadBtn');
-      btn.disabled = true; btn.textContent = 'جارٍ البحث...';
-      showStatus('loading', 'جارٍ البحث...');
+      btn.disabled = true;
+      btn.textContent = 'جارٍ البحث...';
+      showStatus('loading', 'جارٍ البحث عن الفيديو...');
       document.getElementById('videoInfo').className = 'video-info';
       document.getElementById('results').className = 'results';
+
       try {
-        var resp = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: urlVal, downloadMode: selectedFormat }) });
+        var resp = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: urlVal, downloadMode: selectedFormat })
+        });
+
+        if (!resp.ok) {
+          var errorText = '';
+          try { errorText = await resp.text(); } catch (e) {}
+          throw new Error('خطأ السيرفر: HTTP ' + resp.status + (errorText ? ' - ' + errorText.slice(0, 200) : ''));
+        }
+
         var data = await resp.json();
-        if (data.error) { var errMsg = data.error; if (data.details && data.details.length) errMsg += ': ' + data.details.slice(0, 3).join(' | '); throw new Error(errMsg); }
+
+        if (data.error) {
+          var errMsg = data.error;
+          if (data.details && data.details.length) {
+            errMsg += ': ' + data.details.slice(0, 3).join(' | ');
+          }
+          throw new Error(errMsg);
+        }
+
         if (data.status === 'success') {
-          lastVideoId = new URL(urlVal).searchParams.get('v') || '';
-          lastClientName = data.clientName || 0;
           showVideoInfo(data);
           showResults(data);
-          await addToHistory(urlVal, selectedFormat, data.title);
-          showStatus('success', 'تم! ' + data.results.length + ' صيغة متوفرة');
-          setTimeout(hideStatus, 3000);
+          await addToHistory(urlVal, selectedFormat, data.title || '');
+          showStatus('success', 'تم! ' + (data.results ? data.results.length : 0) + ' صيغة متوفرة');
+          setTimeout(hideStatus, 4000);
         } else if (data.status === 'playlist') {
           showPlaylist(data);
-          await addToHistory(urlVal, 'playlist', data.name);
-          showStatus('success', 'قائمة: ' + data.videos.length + ' فيديو');
-          setTimeout(hideStatus, 3000);
-        } else { throw new Error('استجابة غير متوقعة من السيرفر'); }
-      } catch (e) { showStatus('error', e.message || 'فشل التحميل'); } finally { isDownloading = false; btn.disabled = false; btn.textContent = 'تحميل'; }
+          await addToHistory(urlVal, 'playlist', data.name || '');
+          showStatus('success', 'قائمة: ' + (data.videos ? data.videos.length : 0) + ' فيديو');
+          setTimeout(hideStatus, 4000);
+        } else {
+          throw new Error('استجابة غير متوقعة من السيرفر');
+        }
+      } catch (e) {
+        showStatus('error', e.message || 'فشل التحميل');
+      } finally {
+        isDownloading = false;
+        btn.disabled = false;
+        btn.textContent = 'تحميل';
+      }
     }
 
     async function renderHistory() {
       var list = document.getElementById('historyList');
       var items = await getHistory();
-      if (!items.length) { list.innerHTML = '<div class="history-empty">لا توجد عمليات تحميل سابقة</div>'; return; }
+      if (!items.length) {
+        list.innerHTML = '<div class="history-empty">لا توجد عمليات تحميل سابقة</div>';
+        return;
+      }
       var labels = { audio: 'صوت', video: 'فيديو', playlist: 'قائمة' };
       var html = '';
       for (var i = 0; i < items.length; i++) {
         var item = items[i];
-        html += '<div class="history-item"><span class="format-badge">' + (labels[item.format] || item.format) + '</span><span class="history-url" title="' + item.url + '">' + (item.title || item.url) + '</span><span class="history-time">' + fmtTime(item.timestamp) + '</span></div>';
+        html += '<div class="history-item">' +
+          '<span class="format-badge">' + (labels[item.format] || item.format) + '</span>' +
+          '<span class="history-url" title="' + escapeHtml(item.url) + '">' + escapeHtml(item.title || item.url) + '</span>' +
+          '<span class="history-time">' + fmtTime(item.timestamp) + '</span></div>';
       }
       list.innerHTML = html;
     }
 
-    document.getElementById('url').addEventListener('keydown', function(e) { if (e.key === 'Enter') startDownload(); });
+    document.getElementById('url').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') startDownload();
+    });
+
     renderHistory();
   </script>
 </body>
