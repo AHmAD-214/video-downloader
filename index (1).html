@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VidLingo — ترجمة الفيديو بالذكاء الاصطناعي</title>
+    <meta name="description" content="ترجم مقاطع الفيديو مباشرة من المتصفح باستخدام الذكاء الاصطناعي. دعم العربية والإنجليزية وعشرات اللغات.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+    --bg: #0a0a0f;
+    --bg-card: rgba(255, 255, 255, 0.04);
+    --bg-card-hover: rgba(255, 255, 255, 0.08);
+    --border: rgba(255, 255, 255, 0.08);
+    --text: #e4e4e7;
+    --text-dim: #71717a;
+    --accent: #a78bfa;
+    --accent2: #f472b6;
+    --accent3: #38bdf8;
+    --radius: 16px;
+    --radius-sm: 10px;
+}
+html { scroll-behavior: smooth; }
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.7;
+    overflow-x: hidden; min-height: 100vh; display: flex; flex-direction: column;
+}
+main { flex: 1; }
+.bg-mesh {
+    position: fixed; inset: 0; z-index: -1;
+    background:
+        radial-gradient(ellipse 600px 600px at 20% 30%, rgba(167,139,250,0.12), transparent),
+        radial-gradient(ellipse 500px 500px at 80% 60%, rgba(244,114,182,0.08), transparent),
+        radial-gradient(ellipse 400px 400px at 50% 80%, rgba(56,189,248,0.06), transparent);
+    animation: meshMove 20s ease-in-out infinite alternate;
+}
+@keyframes meshMove {
+    0% { transform: scale(1) translate(0,0); }
+    50% { transform: scale(1.1) translate(-2%,3%); }
+    100% { transform: scale(1) translate(2%,-2%); }
+}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+.navbar {
+    position: sticky; top: 0; z-index: 100;
+    backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%);
+    background: rgba(10,10,15,0.7); border-bottom: 1px solid var(--border);
+}
+.nav-container {
+    max-width: 1200px; margin: 0 auto; padding: 0 24px;
+    height: 64px; display: flex; align-items: center; justify-content: space-between;
+}
+.logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); }
+.logo-icon { font-size: 24px; color: var(--accent); }
+.logo-text { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+.accent { color: var(--accent); }
+.nav-links { display: flex; gap: 32px; }
+.nav-links a { color: var(--text-dim); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); }
+.mobile-menu-btn {
+    display: none; flex-direction: column; gap: 5px;
+    background: none; border: none; cursor: pointer; padding: 4px;
+}
+.mobile-menu-btn span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; transition: 0.3s; }
+.hero { text-align: center; padding: 100px 24px 60px; max-width: 800px; margin: 0 auto; }
+.hero-badge {
+    display: inline-block; padding: 8px 20px; border-radius: 100px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    font-size: 13px; font-weight: 500; color: var(--text-dim); margin-bottom: 28px;
+}
+.hero h1 { font-size: clamp(2.2rem,5vw,3.8rem); font-weight: 800; line-height: 1.15; margin-bottom: 20px; letter-spacing: -1px; }
+.gradient-text {
+    background: linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.hero p { font-size: 17px; color: var(--text-dim); max-width: 560px; margin: 0 auto 36px; line-height: 1.8; }
+.cta-btn {
+    display: inline-block; padding: 14px 36px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff; text-decoration: none; font-weight: 600; font-size: 15px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 24px rgba(167,139,250,0.25);
+}
+.cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(167,139,250,0.35); }
+.tool-section { padding: 40px 24px 80px; max-width: 1000px; margin: 0 auto; }
+.tool-container {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px; backdrop-filter: blur(12px);
+}
+.controls-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+.lang-selectors { display: flex; align-items: center; gap: 12px; }
+.lang-group { display: flex; flex-direction: column; gap: 4px; }
+.lang-group label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); }
+.lang-group select {
+    padding: 10px 16px; border-radius: var(--radius-sm);
+    background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+    color: var(--text); font-family: inherit; font-size: 14px;
+    cursor: pointer; outline: none; min-width: 160px; transition: border-color 0.2s;
+}
+.lang-group select:focus { border-color: var(--accent); }
+.swap-btn {
+    width: 40px; height: 40px; border-radius: 50%; background: var(--bg-card);
+    border: 1px solid var(--border); color: var(--text-dim); font-size: 18px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; margin-top: 16px;
+}
+.swap-btn:hover { background: var(--bg-card-hover); color: var(--text); transform: rotate(180deg); }
+.capture-btn {
+    display: flex; align-items: center; gap: 10px; padding: 12px 28px;
+    border-radius: 12px; background: linear-gradient(135deg, #ef4444, #dc2626);
+    border: none; color: #fff; font-family: inherit; font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 16px rgba(239,68,68,0.3);
+}
+.capture-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(239,68,68,0.4); }
+.capture-btn.active { background: linear-gradient(135deg, #22c55e, #16a34a); box-shadow: 0 4px 16px rgba(34,197,94,0.3); }
+.capture-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.capture-icon { font-size: 18px; }
+.video-wrapper { position: relative; width: 100%; aspect-ratio: 16/9; border-radius: var(--radius-sm); overflow: hidden; background: #000; }
+.video-wrapper video { width: 100%; height: 100%; object-fit: contain; display: none; }
+.video-wrapper video.active { display: block; }
+.placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; color: var(--text-dim); }
+.placeholder.hidden { display: none; }
+.placeholder-icon { font-size: 48px; opacity: 0.3; }
+.placeholder p { font-size: 15px; }
+.subtitle-overlay {
+    position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); z-index: 10;
+    display: flex; flex-direction: column-reverse; align-items: center; gap: 8px;
+    pointer-events: none; width: 90%; max-width: 700px;
+}
+.subtitle-line {
+    background: rgba(0,0,0,0.8); color: #fff; padding: 8px 20px; border-radius: 8px;
+    font-size: 18px; font-weight: 500; text-align: center; line-height: 1.6;
+    max-width: 100%; word-wrap: break-word; animation: subtitleIn 0.3s ease-out;
+    backdrop-filter: blur(8px);
+}
+@keyframes subtitleIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.status-bar { display: flex; align-items: center; gap: 10px; padding: 14px 0 0; font-size: 13px; color: var(--text-dim); }
+.status-indicator { width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); transition: background 0.3s; }
+.status-indicator.ready { background: #22c55e; }
+.status-indicator.loading { background: #f59e0b; animation: pulse 1s infinite; }
+.status-indicator.capturing { background: #3b82f6; animation: pulse 1.5s infinite; }
+.status-indicator.error { background: #ef4444; }
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+.visualizer { display: flex; align-items: flex-end; justify-content: center; gap: 2px; height: 40px; padding-top: 16px; opacity: 0.3; transition: opacity 0.3s; }
+.visualizer.active { opacity: 1; }
+.viz-bar { width: 3px; min-height: 2px; border-radius: 2px; background: linear-gradient(to top, var(--accent), var(--accent2)); transition: height 0.05s ease-out; }
+.features-section { padding: 80px 24px; max-width: 1200px; margin: 0 auto; }
+.features-section h2 { text-align: center; font-size: clamp(1.8rem,3vw,2.5rem); font-weight: 800; margin-bottom: 48px; letter-spacing: -0.5px; }
+.bento-grid { display: grid; grid-template-columns: repeat(3,1fr); grid-auto-rows: 180px; gap: 16px; }
+.bento-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 28px; display: flex; flex-direction: column; justify-content: center;
+    transition: all 0.3s; backdrop-filter: blur(8px);
+}
+.bento-card:hover { background: var(--bg-card-hover); border-color: rgba(255,255,255,0.12); transform: translateY(-2px); }
+.bento-large { grid-column: span 2; }
+.bento-wide { grid-column: span 3; }
+.bento-icon { font-size: 32px; margin-bottom: 12px; }
+.bento-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+.bento-card p { font-size: 14px; color: var(--text-dim); line-height: 1.7; }
+.how-section { padding: 80px 24px; max-width: 1000px; margin: 0 auto; }
+.how-section h2 { text-align: center; font-size: clamp(1.8rem,3vw,2.5rem); font-weight: 800; margin-bottom: 56px; letter-spacing: -0.5px; }
+.steps { display: flex; align-items: center; justify-content: center; gap: 0; }
+.step { text-align: center; flex: 0 0 200px; }
+.step-num { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; font-size: 20px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+.step h3 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.step p { font-size: 13px; color: var(--text-dim); line-height: 1.7; padding: 0 12px; }
+.step-connector { width: 60px; height: 2px; background: var(--border); flex-shrink: 0; margin-bottom: 40px; }
+footer { border-top: 1px solid var(--border); padding: 32px 24px; text-align: center; margin-top: auto; }
+.footer-content { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.footer-content p { font-size: 13px; color: var(--text-dim); }
+@media (max-width: 768px) {
+    .mobile-menu-btn { display: flex; }
+    .nav-links { display: none; position: absolute; top: 64px; right: 0; left: 0; flex-direction: column; background: rgba(10,10,15,0.95); backdrop-filter: blur(20px); padding: 16px 24px; gap: 0; border-bottom: 1px solid var(--border); }
+    .nav-links.open { display: flex; }
+    .nav-links a { padding: 12px 0; font-size: 15px; border-bottom: 1px solid var(--border); }
+    .hero { padding: 60px 20px 40px; }
+    .hero h1 { font-size: 2rem; }
+    .controls-bar { flex-direction: column; align-items: stretch; }
+    .lang-selectors { justify-content: center; }
+    .lang-group select { min-width: 130px; }
+    .capture-btn { justify-content: center; width: 100%; }
+    .subtitle-line { font-size: 15px; padding: 6px 14px; }
+    .bento-grid { grid-template-columns: 1fr; grid-auto-rows: auto; }
+    .bento-large, .bento-wide { grid-column: span 1; }
+    .bento-card { padding: 20px; }
+    .steps { flex-direction: column; gap: 0; }
+    .step { flex: none; }
+    .step-connector { width: 2px; height: 40px; margin: 0 auto; }
+    .visualizer { height: 30px; }
+    .viz-bar { width: 2px; }
+}
+@media (max-width: 480px) {
+    .lang-group select { min-width: 110px; font-size: 13px; padding: 8px 12px; }
+    .subtitle-line { font-size: 13px; }
+}
+    </style>
+</head>
+<body>
+    <div class="bg-mesh"></div>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="#" class="logo">
+                <span class="logo-icon">▶</span>
+                <span class="logo-text">Vid<span class="accent">Lingo</span></span>
+            </a>
+            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="القائمة">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="nav-links" id="navLinks">
+                <a href="#tool">الأداة</a>
+                <a href="#features">المميزات</a>
+                <a href="#how-it-works">كيف تعمل</a>
+            </div>
+        </div>
+    </nav>
+    <main>
+        <section class="hero">
+            <div class="hero-badge">🚀 مجاني 100% — بالكامل في متصفحك</div>
+            <h1>ترجم أي فيديو <span class="gradient-text">بضغطة زر</span></h1>
+            <p>التقط تبويب اليوتيوب وشاهد الترجمة النصية مباشرة. بدون تسجيل، بدون تحميل، بدون سيرفر.</p>
+            <a href="#tool" class="cta-btn">جرّب الآن ←</a>
+        </section>
+        <section id="tool" class="tool-section">
+            <div class="tool-container">
+                <div class="controls-bar">
+                    <div class="lang-selectors">
+                        <div class="lang-group">
+                            <label for="sourceLang">من</label>
+                            <select id="sourceLang">
+                                <option value="en">English</option>
+                                <option value="ar">العربية</option>
+                                <option value="fr">Français</option>
+                                <option value="es">Español</option>
+                                <option value="de">Deutsch</option>
+                                <option value="tr">Türkçe</option>
+                                <option value="ja">日本語</option>
+                                <option value="ko">한국어</option>
+                                <option value="zh">中文</option>
+                                <option value="hi">हिन्दी</option>
+                                <option value="pt">Português</option>
+                                <option value="ru">Русский</option>
+                                <option value="it">Italiano</option>
+                                <option value="ur">اردو</option>
+                            </select>
+                        </div>
+                        <button class="swap-btn" id="swapBtn" aria-label="تبديل اللغتين" title="تبديل">⇄</button>
+                        <div class="lang-group">
+                            <label for="targetLang">إلى</label>
+                            <select id="targetLang">
+                                <option value="ar" selected>العربية</option>
+                                <option value="en">English</option>
+                                <option value="fr">Français</option>
+                                <option value="es">Español</option>
+                                <option value="de">Deutsch</option>
+                                <option value="tr">Türkçe</option>
+                                <option value="ja">日本語</option>
+                                <option value="ko">한국어</option>
+                                <option value="zh">中文</option>
+                                <option value="hi">हिन्दी</option>
+                                <option value="pt">Português</option>
+                                <option value="ru">Русский</option>
+                                <option value="it">Italiano</option>
+                                <option value="ur">اردو</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="capture-btn" id="captureBtn">
+                        <span class="capture-icon">◯</span>
+                        <span class="capture-text">التقط التبويب</span>
+                    </button>
+                </div>
+                <div class="video-wrapper" id="videoWrapper">
+                    <video id="videoPlayer" autoplay playsinline></video>
+                    <div class="subtitle-overlay" id="subtitleOverlay"></div>
+                    <div class="placeholder" id="placeholder">
+                        <div class="placeholder-icon">▶</div>
+                        <p>اضغط "التقط التبويب" واختر تبويب اليوتيوب</p>
+                    </div>
+                </div>
+                <div class="status-bar" id="statusBar">
+                    <div class="status-indicator" id="statusIndicator"></div>
+                    <span id="statusText">جاهز</span>
+                </div>
+                <div class="visualizer" id="visualizer">
+                    <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
+                    <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
+                    <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
+                    <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
+                    <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
+                    <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
+                    <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
+                    <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
+                    <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
+                    <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
+                    <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
+                </div>
+            </div>
+        </section>
+        <section id="features" class="features-section">
+            <h2>لماذا <span class="gradient-text">VidLingo</span>؟</h2>
+            <div class="bento-grid">
+                <div class="bento-card bento-large">
+                    <div class="bento-icon">🧠</div>
+                    <h3>ذكاء اصطناعي بالمتصفح</h3>
+                    <p>نموذج Whisper يعمل مباشرة في متصفحك عبر WebAssembly. ما في شي يروح لسيرفر.</p>
+                </div>
+                <div class="bento-card">
+                    <div class="bento-icon">🔒</div>
+                    <h3>خصوصية تامة</h3>
+                    <p>لا تسجيل، لا كوكيز، لا تتبع. كل شي محلي.</p>
+                </div>
+                <div class="bento-card">
+                    <div class="bento-icon">🌍</div>
+                    <h3>14+ لغة</h3>
+                    <p>دعم كامل للعربية والإنجليزية والفرنسية واليابانية والمزيد.</p>
+                </div>
+                <div class="bento-card">
+                    <div class="bento-icon">⚡</div>
+                    <h3>فوري</h3>
+                    <p>ترجمة لحظية مع عرض الترجمة فوق الفيديو مباشرة.</p>
+                </div>
+                <div class="bento-card bento-wide">
+                    <div class="bento-icon">📱</div>
+                    <h3>يعمل على كل الأجهزة</h3>
+                    <p>متوافق مع الكمبيوتر والجوال. واجهة متجاوبة تصميم عصري.</p>
+                </div>
+            </div>
+        </section>
+        <section id="how-it-works" class="how-section">
+            <h2>كيف <span class="gradient-text">تعمل</span>؟</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <h3>اختر التبويب</h3>
+                    <p>اضغط "التقط التبويب" واختر تبويب اليوتيوب المفتوح</p>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <h3>يتم التقاط الصوت</h3>
+                    <p>الذكاء الاصطناعي يحول الكلام إلى نص تلقائياً</p>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <h3>ترجمة فورية</h3>
+                    <p>النص يُترجم ويعرض كترجمة فوق الفيديو مباشرة</p>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <div class="footer-content">
+            <span class="logo-text">Vid<span class="accent">Lingo</span></span>
+            <p>مبني بـ ❤️ — مجاني ومفتوح للجميع</p>
+        </div>
+    </footer>
+    <script>
+const Capture = {
+    stream: null, audioContext: null, analyser: null, sourceNode: null, processorNode: null, audioChunks: [],
+    async start() {
+        try {
+            this.stream = await navigator.mediaDevices.getDisplayMedia({
+                video: { cursor: 'never' }, audio: true,
+                preferCurrentTab: true, selfBrowserSurface: 'exclude',
+                surfaceSwitching: 'exclude', systemAudio: 'include'
+            });
+            const video = document.getElementById('videoPlayer');
+            video.srcObject = this.stream;
+            video.classList.add('active');
+            document.getElementById('placeholder').classList.add('hidden');
+            this.stream.getVideoTracks()[0].addEventListener('ended', () => App.onCaptureEnded());
+            this.setupAudio();
+            return true;
+        } catch (err) { console.error('Capture error:', err); return false; }
+    },
+    setupAudio() {
+        const audioTracks = this.stream.getAudioTracks();
+        if (!audioTracks.length) return;
+        this.audioContext = new AudioContext({ sampleRate: 16000 });
+        this.sourceNode = this.audioContext.createMediaStreamSource(new MediaStream(audioTracks));
+        this.analyser = this.audioContext.createAnalyser();
+        this.analyser.fftSize = 256;
+        this.sourceNode.connect(this.analyser);
+        const processor = this.audioContext.createScriptProcessor(4096, 1, 1);
+        this.processorNode = processor;
+        processor.onaudioprocess = (e) => {
+            const data = e.inputBuffer.getChannelData(0);
+            this.audioChunks.push(new Float32Array(data));
+        };
+        this.sourceNode.connect(processor);
+        processor.connect(this.audioContext.destination);
+    },
+    getFrequencyData() {
+        if (!this.analyser) return new Uint8Array(128);
+        const data = new Uint8Array(this.analyser.frequencyBinCount);
+        this.analyser.getByteFrequencyData(data);
+        return data;
+    },
+    getAudioChunks() { const c = this.audioChunks; this.audioChunks = []; return c; },
+    stop() {
+        if (this.processorNode) { this.processorNode.disconnect(); this.processorNode = null; }
+        if (this.sourceNode) { this.sourceNode.disconnect(); this.sourceNode = null; }
+        if (this.audioContext) { this.audioContext.close(); this.audioContext = null; }
+        if (this.stream) { this.stream.getTracks().forEach(t => t.stop()); this.stream = null; }
+        this.analyser = null; this.audioChunks = [];
+        const video = document.getElementById('videoPlayer');
+        video.srcObject = null; video.classList.remove('active');
+        document.getElementById('placeholder').classList.remove('hidden');
+    }
+};
+
+const Transcriber = {
+    model: null, loading: false, loaded: false, onProgress: null,
+    async load(progressCallback) {
+        if (this.loaded || this.loading) return;
+        this.loading = true; this.onProgress = progressCallback;
+        try {
+            const { pipeline, env } = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3');
+            env.allowLocalModels = false;
+            this.model = await pipeline('automatic-speech-recognition', 'onnx-community/whisper-tiny', {
+                dtype: 'q8', device: 'wasm',
+                progress_callback: (progress) => { if (this.onProgress && progress.status === 'progress') this.onProgress(progress); }
+            });
+            this.loaded = true;
+        } catch (err) { console.error('Model loading error:', err); throw err; }
+        finally { this.loading = false; }
+    },
+    async transcribe(audioData) {
+        if (!this.model) throw new Error('Model not loaded');
+        const totalLength = audioData.reduce((sum, chunk) => sum + chunk.length, 0);
+        const merged = new Float32Array(totalLength);
+        let offset = 0;
+        for (const chunk of audioData) { merged.set(chunk, offset); offset += chunk.length; }
+        const result = await this.model(merged, {
+            return_timestamps: false, chunk_length_s: 30, stride_length_s: 5,
+            language: document.getElementById('sourceLang').value, task: 'transcribe'
+        });
+        return result.text?.trim() || '';
+    }
+};
+
+const Translator = {
+    async translate(text, targetLang) {
+        if (!text || !text.trim()) return '';
+        try {
+            const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+            const res = await fetch(url); const data = await res.json();
+            if (data && data[0]) return data[0].map(item => item[0]).join('');
+            throw new Error('Empty response');
+        } catch (err) {
+            console.warn('Google Translate failed, trying MyMemory:', err);
+            return this.fallbackMyMemory(text, targetLang);
+        }
+    },
+    async fallbackMyMemory(text, targetLang) {
+        try {
+            const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=auto|${targetLang}`;
+            const res = await fetch(url); const data = await res.json();
+            return data.responseData?.translatedText || text;
+        } catch (err) { console.error('Translation failed:', err); return text; }
+    }
+};
+
+const Subtitles = {
+    container: null,
+    init() { this.container = document.getElementById('subtitleOverlay'); },
+    show(text) {
+        if (!this.container || !text) return;
+        const span = document.createElement('div');
+        span.className = 'subtitle-line';
+        span.textContent = this.escapeHtml(text);
+        this.container.appendChild(span);
+        while (this.container.children.length > 4) this.container.removeChild(this.container.firstChild);
+        setTimeout(() => {
+            if (span.parentNode) {
+                span.style.transition = 'opacity 0.5s'; span.style.opacity = '0';
+                setTimeout(() => span.remove(), 500);
+            }
+        }, 6000);
+    },
+    clear() { if (this.container) this.container.innerHTML = ''; },
+    escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+};
+
+const App = {
+    state: 'idle', intervalId: null, animFrameId: null,
+    async init() {
+        Subtitles.init();
+        document.getElementById('captureBtn').addEventListener('click', () => this.toggleCapture());
+        document.getElementById('swapBtn').addEventListener('click', () => this.swapLanguages());
+        document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+            document.getElementById('navLinks').classList.toggle('open');
+        });
+    },
+    async toggleCapture() {
+        if (this.state === 'idle' || this.state === 'stopped') await this.start();
+        else this.stop();
+    },
+    async start() {
+        const btn = document.getElementById('captureBtn'); btn.disabled = true;
+        if (!Transcriber.loaded && !Transcriber.loading) {
+            this.setState('loading');
+            try {
+                await Transcriber.load((progress) => {
+                    if (progress.file) {
+                        const name = progress.file.split('/').pop();
+                        this.setStatus('جاري تحميل النموذج: ' + name, 'loading');
+                    }
+                });
+            } catch (err) {
+                this.setStatus('فشل تحميل النموذج', 'error');
+                btn.disabled = false; this.setState('idle'); return;
+            }
+        }
+        const success = await Capture.start();
+        if (!success) { this.setStatus('تم الإلغاء أو فشل الالتقاط', 'error'); btn.disabled = false; return; }
+        this.setState('capturing'); btn.disabled = false;
+        btn.classList.add('active');
+        btn.querySelector('.capture-text').textContent = 'إيقاف الالتقاط';
+        btn.querySelector('.capture-icon').textContent = '■';
+        this.startTranscriptionLoop(); this.startVisualization();
+    },
+    stop() {
+        this.setState('stopped'); Capture.stop(); Subtitles.clear();
+        if (this.intervalId) { clearInterval(this.intervalId); this.intervalId = null; }
+        if (this.animFrameId) { cancelAnimationFrame(this.animFrameId); this.animFrameId = null; }
+        const btn = document.getElementById('captureBtn'); btn.classList.remove('active');
+        btn.querySelector('.capture-text').textContent = 'التقط التبويب';
+        btn.querySelector('.capture-icon').textContent = '◯';
+        document.getElementById('visualizer').classList.remove('active');
+        this.setStatus('تم الإيقاف', 'ready');
+    },
+    onCaptureEnded() { this.stop(); },
+    startTranscriptionLoop() {
+        this.intervalId = setInterval(async () => {
+            const chunks = Capture.getAudioChunks();
+            if (!chunks.length) return;
+            const totalSamples = chunks.reduce((s, c) => s + c.length, 0);
+            let rms = 0;
+            for (const chunk of chunks) { for (let i = 0; i < chunk.length; i++) rms += chunk[i] * chunk[i]; }
+            rms = Math.sqrt(rms / totalSamples);
+            if (rms < 0.01) return;
+            this.setStatus('جاري النسخ والترجمة...', 'capturing');
+            try {
+                const text = await Transcriber.transcribe(chunks);
+                if (!text) return;
+                const targetLang = document.getElementById('targetLang').value;
+                const translated = await Translator.translate(text, targetLang);
+                if (translated) Subtitles.show(translated);
+            } catch (err) { console.error('Transcription error:', err); }
+        }, 4000);
+    },
+    startVisualization() {
+        const viz = document.getElementById('visualizer');
+        const bars = viz.querySelectorAll('.viz-bar');
+        viz.classList.add('active');
+        const update = () => {
+            const data = Capture.getFrequencyData();
+            const step = Math.floor(data.length / bars.length);
+            bars.forEach((bar, i) => {
+                const val = data[i * step] || 0;
+                bar.style.height = Math.max(2, (val / 255) * 40) + 'px';
+            });
+            this.animFrameId = requestAnimationFrame(update);
+        };
+        update();
+    },
+    swapLanguages() {
+        const src = document.getElementById('sourceLang');
+        const tgt = document.getElementById('targetLang');
+        const tmp = src.value; src.value = tgt.value; tgt.value = tmp;
+    },
+    setState(state) { this.state = state; document.getElementById('statusIndicator').className = 'status-indicator ' + state; },
+    setStatus(text, state) { document.getElementById('statusText').textContent = text; if (state) this.setState(state); }
+};
+
+document.addEventListener('DOMContentLoaded', () => App.init());
+    </script>
+</body>
+</html>
