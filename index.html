@@ -222,9 +222,9 @@ footer { border-top: 1px solid var(--border); padding: 32px 24px; text-align: ce
     </nav>
     <main>
         <section class="hero">
-            <div class="hero-badge">🚀 مجاني 100% — بالكامل في متصفحك</div>
+            <div class="hero-badge">🚀 مجاني 100% — ترجمة فورية</div>
             <h1>ترجم أي فيديو <span class="gradient-text">بضغطة زر</span></h1>
-            <p>التقط تبويب اليوتيوب وشاهد الترجمة النصية مباشرة. بدون تسجيل، بدون تحميل، بدون سيرفر.</p>
+            <p>التقط تبويب اليوتيوب وشاهد الترجمة النصية مباشرة. بدون تسجيل، بدون تحميل.</p>
             <a href="#tool" class="cta-btn">جرّب الآن ←</a>
         </section>
         <section id="tool" class="tool-section">
@@ -308,13 +308,13 @@ footer { border-top: 1px solid var(--border); padding: 32px 24px; text-align: ce
             <div class="bento-grid">
                 <div class="bento-card bento-large">
                     <div class="bento-icon">🧠</div>
-                    <h3>ذكاء اصطناعي بالمتصفح</h3>
-                    <p>نموذج Whisper يعمل مباشرة في متصفحك عبر WebAssembly. ما في شي يروح لسيرفر.</p>
+                    <h3>ذكاء اصطناعي قوي</h3>
+                    <p>نموذج Whisper عبر API مخصص يوفر دقة عالية وسرعة فائقة في النسخ والترجمة.</p>
                 </div>
                 <div class="bento-card">
                     <div class="bento-icon">🔒</div>
                     <h3>خصوصية تامة</h3>
-                    <p>لا تسجيل، لا كوكيز، لا تتبع. كل شي محلي.</p>
+                    <p>لا تسجيل، لا كوكيز، لا تتبع.</p>
                 </div>
                 <div class="bento-card">
                     <div class="bento-icon">🌍</div>
@@ -323,8 +323,8 @@ footer { border-top: 1px solid var(--border); padding: 32px 24px; text-align: ce
                 </div>
                 <div class="bento-card">
                     <div class="bento-icon">⚡</div>
-                    <h3>فوري</h3>
-                    <p>ترجمة لحظية مع عرض الترجمة فوق الفيديو مباشرة.</p>
+                    <h3>سريع</h3>
+                    <p>ترجمة شبه فورية مع عرض الترجمة فوق الفيديو مباشرة.</p>
                 </div>
                 <div class="bento-card bento-wide">
                     <div class="bento-icon">📱</div>
@@ -365,6 +365,17 @@ footer { border-top: 1px solid var(--border); padding: 32px 24px; text-align: ce
     <script>
 const API_URL = 'https://video-downloader-6qc1.onrender.com';
 
+// Pre-warm API immediately on page load
+fetch(API_URL + '/health').catch(() => {});
+// Also warm when user scrolls near the tool
+const toolObserver = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) {
+        fetch(API_URL + '/health').catch(() => {});
+        toolObserver.disconnect();
+    }
+}, { threshold: 0.1 });
+toolObserver.observe(document.getElementById('tool'));
+
 const Capture = {
     stream: null, audioContext: null, analyser: null, sourceNode: null, processorNode: null, audioChunks: [],
     async start() {
@@ -373,7 +384,8 @@ const Capture = {
                 video: { cursor: 'never' }, audio: true,
             });
             const video = document.getElementById('videoPlayer');
-            video.srcObject = this.stream; video.classList.add('active');
+            video.srcObject = this.stream;
+            video.classList.add('active');
             document.getElementById('placeholder').classList.add('hidden');
             this.stream.getVideoTracks()[0].addEventListener('ended', () => App.onCaptureEnded());
             this.setupAudio();
@@ -405,13 +417,33 @@ const Capture = {
     },
     getAudioChunks() { const c = this.audioChunks; this.audioChunks = []; return c; },
     async stop() {
-        if (this.processorNode) { this.processorNode.onaudioprocess = null; this.processorNode.disconnect(); this.processorNode = null; }
-        if (this.sourceNode) { this.sourceNode.disconnect(); this.sourceNode = null; }
-        if (this.audioContext) { try { await this.audioContext.close(); } catch(e) {} this.audioContext = null; }
-        if (this.stream) { this.stream.getTracks().forEach(t => t.stop()); this.stream = null; }
-        this.analyser = null; this.audioChunks = [];
+        if (this.processorNode) {
+            this.processorNode.onaudioprocess = null;
+            try { this.processorNode.disconnect(); } catch(e) {}
+            this.processorNode = null;
+        }
+        if (this.sourceNode) {
+            try { this.sourceNode.disconnect(); } catch(e) {}
+            this.sourceNode = null;
+        }
+        if (this.analyser) {
+            try { this.analyser.disconnect(); } catch(e) {}
+            this.analyser = null;
+        }
+        if (this.audioContext) {
+            try { await this.audioContext.close(); } catch(e) {}
+            this.audioContext = null;
+        }
+        if (this.stream) {
+            this.stream.getTracks().forEach(t => { try { t.stop(); } catch(e) {} });
+            this.stream = null;
+        }
+        this.audioChunks = [];
         const video = document.getElementById('videoPlayer');
-        video.srcObject = null; video.pause(); video.classList.remove('active');
+        video.srcObject = null;
+        video.removeAttribute('src');
+        video.load();
+        video.classList.remove('active');
         document.getElementById('placeholder').classList.remove('hidden');
     }
 };
@@ -472,7 +504,7 @@ async function sendToBackend(audioData, sourceLang, targetLang) {
 }
 
 const App = {
-    state: 'idle', intervalId: null, animFrameId: null,
+    state: 'idle', intervalId: null, animFrameId: null, processingCount: 0,
     async init() {
         Subtitles.init();
         document.getElementById('captureBtn').addEventListener('click', () => this.toggleCapture());
@@ -482,31 +514,50 @@ const App = {
         });
     },
     async toggleCapture() {
-        if (this.state === 'idle' || this.state === 'stopped') await this.start();
-        else await this.stop();
+        if (this.state === 'idle') await this.start();
+        else if (this.state === 'capturing') await this.stop();
     },
     async start() {
-        const btn = document.getElementById('captureBtn'); btn.disabled = true;
+        const btn = document.getElementById('captureBtn');
+        btn.disabled = true;
+        this.setStatus('جاري التحضير...', 'loading');
+        // Warm API in parallel with getDisplayMedia (getDisplayMedia needs user gesture)
+        const healthP = fetch(API_URL + '/health').catch(() => {});
         const success = await Capture.start();
-        if (!success) { this.setStatus('تم الإلغاء أو فشل الالتقاط', 'error'); this.setState('idle'); btn.disabled = false; return; }
+        await healthP;
+        if (!success) {
+            this.setStatus('تم الإلغاء أو فشل الالتقاط', 'error');
+            this.setState('idle'); btn.disabled = false;
+            return;
+        }
         this.setState('capturing'); btn.disabled = false;
         btn.classList.add('active');
         btn.querySelector('.capture-text').textContent = 'إيقاف الالتقاط';
         btn.querySelector('.capture-icon').textContent = '■';
-        this.startTranscriptionLoop(); this.startVisualization();
+        this.processingCount = 0;
+        this.startTranscriptionLoop();
+        this.startVisualization();
     },
     async stop() {
-        this.setState('idle'); await Capture.stop(); Subtitles.clear();
+        this.setState('cooldown');
+        await Capture.stop();
+        Subtitles.clear();
         if (this.intervalId) { clearInterval(this.intervalId); this.intervalId = null; }
         if (this.animFrameId) { cancelAnimationFrame(this.animFrameId); this.animFrameId = null; }
-        const btn = document.getElementById('captureBtn'); btn.classList.remove('active');
+        const btn = document.getElementById('captureBtn');
+        btn.classList.remove('active');
         btn.querySelector('.capture-text').textContent = 'التقط التبويب';
         btn.querySelector('.capture-icon').textContent = '◯';
         document.getElementById('visualizer').classList.remove('active');
         this.setStatus('تم الإيقاف', 'ready');
+        // Cooldown: Chrome needs time to fully release getDisplayMedia before it can be called again
+        setTimeout(() => {
+            if (this.state === 'cooldown') this.setState('idle');
+        }, 800);
     },
     async onCaptureEnded() { await this.stop(); },
     startTranscriptionLoop() {
+        // Use 2 second interval instead of 3 for faster response
         this.intervalId = setInterval(async () => {
             const chunks = Capture.getAudioChunks();
             if (!chunks.length) return;
@@ -515,6 +566,7 @@ const App = {
             for (const chunk of chunks) { for (let i = 0; i < chunk.length; i++) rms += chunk[i] * chunk[i]; }
             rms = Math.sqrt(rms / totalSamples);
             if (rms < 0.01) return;
+            this.processingCount++;
             this.setStatus('جاري النسخ والترجمة...', 'capturing');
             try {
                 const result = await sendToBackend(
@@ -524,7 +576,8 @@ const App = {
                 );
                 if (result.translation) Subtitles.show(result.translation);
             } catch (err) { console.error('Process error:', err); }
-        }, 3000);
+            this.processingCount--;
+        }, 2000);
     },
     startVisualization() {
         const viz = document.getElementById('visualizer');
