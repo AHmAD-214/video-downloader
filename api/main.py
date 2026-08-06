@@ -119,6 +119,40 @@ async def translate_blocks(request: TranslateBlocksRequest):
 
 
 async def translate_text(text: str, target_lang: str) -> str:
+    """Translate using Groq LLM (primary), Google Translate (fallback)."""
+    if groq_client:
+        try:
+            import asyncio
+            lang_names = {
+                "ar": "Arabic", "en": "English", "fr": "French", "es": "Spanish",
+                "de": "German", "tr": "Turkish", "ur": "Urdu", "fa": "Persian",
+                "hi": "Hindi", "zh": "Chinese", "ja": "Japanese", "ko": "Korean",
+                "ru": "Russian", "pt": "Portuguese", "it": "Italian", "nl": "Dutch",
+                "id": "Indonesian", "ms": "Malay", "bn": "Bengali", "sw": "Swahili",
+            }
+            lang_name = lang_names.get(target_lang, target_lang)
+            system_msg = "You are a professional translator. Translate accurately to " + lang_name + ". Output ONLY the translation, no explanations."
+            user_msg = "Translate the following text to " + lang_name + ". Only output the translation, nothing else. Preserve paragraph breaks and formatting.\n\nText:\n" + text
+            loop = asyncio.get_event_loop()
+            resp = await loop.run_in_executor(
+                None,
+                lambda: groq_client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=[
+                        {"role": "system", "content": system_msg},
+                        {"role": "user", "content": user_msg},
+                    ],
+                    temperature=0.1,
+                    max_tokens=4096,
+                ),
+            )
+            translated = resp.choices[0].message.content.strip()
+            if translated:
+                return translated
+        except Exception as e:
+            print(f"Groq translation failed: {e}")
+
+    # --- Google Translate (fallback) ---
     try:
         async with httpx.AsyncClient() as client:
             params = {"client": "gtx", "sl": "auto", "tl": target_lang, "dt": "t", "q": text}
@@ -131,9 +165,10 @@ async def translate_text(text: str, target_lang: str) -> str:
     except Exception:
         pass
 
+    # --- MyMemory (last resort) ---
     try:
         async with httpx.AsyncClient() as client:
-            params = {"q": text, "langpair": f"en|{target_lang}"}
+            params = {"q": text, "langpair": "en|" + target_lang}
             resp = await client.get("https://api.mymemory.translated.net/get", params=params, timeout=15.0)
             if resp.status_code == 200:
                 data = resp.json()
