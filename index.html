@@ -364,7 +364,7 @@ footer { border-top: 1px solid var(--border); padding: 32px 24px; text-align: ce
     </footer>
     <script>
 const API_URL = 'https://video-downloader-6qc1.onrender.com';
-const REQUEST_TIMEOUT = 20000; // 20 second timeout per request
+const REQUEST_TIMEOUT = 15000;
 
 // Pre-warm API on page load
 fetch(API_URL + '/health').catch(() => {});
@@ -377,14 +377,21 @@ const Capture = {
     stream: null, audioContext: null, analyser: null, sourceNode: null, processorNode: null, audioChunks: [],
     async start() {
         try {
-            this.stream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: 'never' }, audio: true });
+            // Add timeout to getDisplayMedia so it doesn't hang forever
+            const mediaPromise = navigator.mediaDevices.getDisplayMedia({ video: { cursor: 'never' }, audio: true });
+            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('capture_timeout')), 15000));
+            this.stream = await Promise.race([mediaPromise, timeoutPromise]);
             const video = document.getElementById('videoPlayer');
             video.srcObject = this.stream; video.classList.add('active');
             document.getElementById('placeholder').classList.add('hidden');
             this.stream.getVideoTracks()[0].addEventListener('ended', () => App.onCaptureEnded());
             this.setupAudio();
             return true;
-        } catch (err) { console.error('Capture error:', err); return false; }
+        } catch (err) {
+            console.error('Capture error:', err);
+            this.stream = null;
+            return false;
+        }
     },
     setupAudio() {
         const audioTracks = this.stream.getAudioTracks();
@@ -408,14 +415,20 @@ const Capture = {
     },
     getAudioChunks() { const c = this.audioChunks; this.audioChunks = []; return c; },
     async stop() {
+        // 1. Stop audio processing
         if (this.processorNode) { this.processorNode.onaudioprocess = null; try { this.processorNode.disconnect(); } catch(e) {} this.processorNode = null; }
         if (this.sourceNode) { try { this.sourceNode.disconnect(); } catch(e) {} this.sourceNode = null; }
         if (this.analyser) { try { this.analyser.disconnect(); } catch(e) {} this.analyser = null; }
         if (this.audioContext) { try { await this.audioContext.close(); } catch(e) {} this.audioContext = null; }
+        // 2. Stop all tracks and null stream
         if (this.stream) { this.stream.getTracks().forEach(t => { try { t.stop(); } catch(e) {} }); this.stream = null; }
         this.audioChunks = [];
+        // 3. Reset video element completely
         const video = document.getElementById('videoPlayer');
-        video.srcObject = null; video.removeAttribute('src'); video.load();
+        video.pause();
+        video.onloadedmetadata = null; video.onplay = null;
+        video.srcObject = null;
+        try { video.load(); } catch(e) {}
         video.classList.remove('active');
         document.getElementById('placeholder').classList.remove('hidden');
     }
@@ -491,11 +504,9 @@ const App = {
     async start() {
         const btn = document.getElementById('captureBtn');
         btn.disabled = true;
-        this.setStatus('جاري التحضير...', 'loading');
-        const healthP = fetch(API_URL + '/health').catch(() => {});
+        this.setStatus('اختر التبويب يلي فيه الفيديو...', 'loading');
         const success = await Capture.start();
-        await healthP;
-        if (!success) { this.setStatus('تم الإلغاء', 'error'); this.setState('idle'); btn.disabled = false; return; }
+        if (!success) { this.setStatus('لم يتم اختيار تبويب', 'error'); this.setState('idle'); btn.disabled = false; return; }
         this.setState('capturing'); btn.disabled = false; btn.classList.add('active');
         btn.querySelector('.capture-text').textContent = 'إيقاف الالتقاط';
         btn.querySelector('.capture-icon').textContent = '■';
@@ -505,7 +516,6 @@ const App = {
     },
     async stop() {
         this.setState('cooldown');
-        // Cancel any pending request
         if (this.pendingAbort) { this.pendingAbort.abort(); this.pendingAbort = null; }
         await Capture.stop();
         Subtitles.clear();
@@ -513,11 +523,16 @@ const App = {
         if (this.animFrameId) { cancelAnimationFrame(this.animFrameId); this.animFrameId = null; }
         const btn = document.getElementById('captureBtn');
         btn.classList.remove('active');
-        btn.querySelector('.capture-text').textContent = 'التقط التبويب';
-        btn.querySelector('.capture-icon').textContent = '◯';
+        btn.querySelector('.capture-text').textContent = 'انتظر...';
+        btn.disabled = true;
         document.getElementById('visualizer').classList.remove('active');
         this.setStatus('تم الإيقاف', 'ready');
-        setTimeout(() => { if (this.state === 'cooldown') this.setState('idle'); }, 800);
+        setTimeout(() => {
+            btn.querySelector('.capture-text').textContent = 'التقط التبويب';
+            btn.querySelector('.capture-icon').textContent = '◯';
+            btn.disabled = false;
+            if (App.state === 'cooldown') App.setState('idle');
+        }, 2000);
     },
     async onCaptureEnded() { await this.stop(); },
     startTranscriptionLoop() {
@@ -550,10 +565,9 @@ const App = {
                     Subtitles.show(result.transcription);
                     this.errorCount = 0;
                 } else {
-                    // Both empty - model might not be ready
                     this.errorCount++;
                     if (this.errorCount >= 3) {
-                        this.setStatus('نموذج الذكاء الاصطناعي قيد التحميل، انتظر قليلاً...', 'loading');
+                        this.setStatus('لا يتم اكتشاف كلام واضح', 'error');
                     }
                 }
             } catch (err) {
@@ -561,7 +575,7 @@ const App = {
                 console.error('Process error:', err);
                 this.errorCount++;
                 if (this.errorCount >= 2) {
-                    this.setStatus('خطأ في الاتصال — تحقق من الإنترنت وحاول مرة أخرى', 'error');
+                    this.setStatus('خطأ في الاتصال بالسيرفر', 'error');
                 } else {
                     this.setStatus('جاري إعادة المحاولة...', 'loading');
                 }
