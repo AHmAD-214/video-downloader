@@ -208,7 +208,7 @@
         .media-section .screenshot-img {
             width: 100%;
             display: block;
-            border-radius: 14px;
+            border-radius: 0;
         }
         .media-placeholder {
             width: 100%;
@@ -259,7 +259,7 @@
         }
         .results-container {
             flex: 1;
-            max-height: 500px;
+            max-height: 600px;
             overflow-y: auto;
             padding-left: 6px;
         }
@@ -267,6 +267,7 @@
         .results-container::-webkit-scrollbar-track { background: #1a1a2e; border-radius: 3px; }
         .results-container::-webkit-scrollbar-thumb { background: #7c3aed; border-radius: 3px; }
 
+        /* ===== Audio result cards (unchanged) ===== */
         .result-card {
             background: #252540;
             border-radius: 10px;
@@ -274,13 +275,6 @@
             margin-bottom: 10px;
             border-right: 3px solid #7c3aed;
             animation: fadeIn 0.3s ease;
-        }
-        .result-card.text-card {
-            border-right-color: #f59e0b;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
         }
         .result-card .original {
             color: #9ca3af;
@@ -293,24 +287,110 @@
             font-size: 1.05em;
             line-height: 1.7;
         }
-        .result-card .thumb {
-            width: 100%;
-            max-height: 120px;
+
+        /* ===== Text result cards (improved) ===== */
+        .text-result-card {
+            background: #1e1e38;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 14px;
+            animation: fadeIn 0.3s ease;
+            border: 1px solid #2d2d50;
+        }
+        .text-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: #252545;
+            border-bottom: 1px solid #2d2d50;
+            font-size: 0.85em;
+        }
+        .text-card-header .meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #888;
+        }
+        .text-card-header .meta .badge {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.85em;
+        }
+        .text-card-header .thumb-sm {
+            width: 40px;
+            height: 28px;
             object-fit: cover;
-            border-radius: 8px;
-            margin-bottom: 8px;
+            border-radius: 4px;
             cursor: pointer;
-            opacity: 0.8;
+            opacity: 0.7;
             transition: opacity 0.2s;
         }
-        .result-card .thumb:hover { opacity: 1; }
-        .result-card .lang-label {
-            font-size: 0.75em;
-            color: #7c3aed;
-            margin-bottom: 2px;
-            font-weight: 600;
+        .text-card-header .thumb-sm:hover { opacity: 1; }
+        .text-card-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
         }
-        .result-card.text-card .lang-label { color: #f59e0b; }
+        @media (max-width: 600px) {
+            .text-card-body { grid-template-columns: 1fr; }
+        }
+        .text-col {
+            padding: 14px;
+            overflow-y: auto;
+            max-height: 400px;
+        }
+        .text-col::-webkit-scrollbar { width: 3px; }
+        .text-col::-webkit-scrollbar-thumb { background: #555; border-radius: 2px; }
+        .text-col-orig {
+            border-left: 1px solid #2d2d50;
+        }
+        .text-col-trans {
+            border-right: 1px solid #2d2d50;
+        }
+        [dir="ltr"] .text-col-orig { border-left: none; border-right: 1px solid #2d2d50; }
+        [dir="ltr"] .text-col-trans { border-right: none; border-left: 1px solid #2d2d50; }
+        .text-col-header {
+            font-size: 0.75em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #2d2d50;
+        }
+        .text-col-orig .text-col-header { color: #f59e0b; }
+        .text-col-trans .text-col-header { color: #7c3aed; }
+        .text-content {
+            font-size: 0.95em;
+            line-height: 1.8;
+            white-space: pre-line;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        .text-col-orig .text-content { color: #9ca3af; }
+        .text-col-trans .text-content { color: #e0e0e0; }
+        .copy-btn {
+            background: #333;
+            border: none;
+            color: #888;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .copy-btn:hover { background: #444; color: #bbb; }
+        .copy-btn.copied { background: #166534; color: #4ade80; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .no-results {
             text-align: center;
             padding: 40px 16px;
@@ -343,7 +423,7 @@
     <div class="container">
         <header>
             <h1>VidLingo</h1>
-            <p id="headerSubtitle">مترجم الفيديو والنصوص بالذكاء الاصطناعي</p>
+            <p>مترجم الفيديو والنصوص بالذكاء الاصطناعي</p>
         </header>
 
         <!-- Mode Tabs -->
@@ -461,7 +541,7 @@
         const API_URL = 'https://video-downloader-1-mthm.onrender.com';
 
         // ===== State =====
-        let currentMode = 'audio'; // 'audio' or 'text'
+        let currentMode = 'audio';
         let mediaStream = null;
         let audioContext = null;
         let processorNode = null;
@@ -478,9 +558,7 @@
 
         // ===== RTL Languages =====
         const RTL_LANGS = ['ar', 'he', 'fa', 'ur', 'yi', 'ku', 'ckb'];
-        function isRTLLang(langCode) {
-            return RTL_LANGS.some(l => langCode.startsWith(l));
-        }
+        function isRTLLang(code) { return RTL_LANGS.some(l => code.startsWith(l)); }
 
         // ===== Tesseract Language Map =====
         const TESS_LANG_MAP = {
@@ -489,28 +567,29 @@
             'hi': 'hin', 'ur': 'urd', 'ru': 'rus', 'pt': 'por', 'it': 'ita'
         };
 
-        // ===== DOM References =====
-        const btnCapture = document.getElementById('btnCapture');
-        const btnStop = document.getElementById('btnStop');
-        const btnClear = document.getElementById('btnClear');
-        const statusBar = document.getElementById('statusBar');
-        const resultsContainer = document.getElementById('resultsContainer');
-        const noResults = document.getElementById('noResults');
-        const statsBar = document.getElementById('statsBar');
-        const videoPlayer = document.getElementById('videoPlayer');
-        const screenshotPreview = document.getElementById('screenshotPreview');
-        const mediaPlaceholder = document.getElementById('mediaPlaceholder');
-        const placeholderText = document.getElementById('placeholderText');
-        const recBadge = document.getElementById('recBadge');
-        const sourceLangSelect = document.getElementById('sourceLang');
-        const targetLangSelect = document.getElementById('targetLang');
-        const chunkDurationSelect = document.getElementById('chunkDuration');
-        const chunkSetting = document.getElementById('chunkSetting');
-        const infoBox = document.getElementById('infoBox');
-        const ocrProgress = document.getElementById('ocrProgress');
-        const ocrProgressBar = document.getElementById('ocrProgressBar');
+        // ===== DOM =====
+        const $ = id => document.getElementById(id);
+        const btnCapture = $('btnCapture');
+        const btnStop = $('btnStop');
+        const btnClear = $('btnClear');
+        const statusBar = $('statusBar');
+        const resultsContainer = $('resultsContainer');
+        const noResults = $('noResults');
+        const statsBar = $('statsBar');
+        const videoPlayer = $('videoPlayer');
+        const screenshotPreview = $('screenshotPreview');
+        const mediaPlaceholder = $('mediaPlaceholder');
+        const placeholderText = $('placeholderText');
+        const recBadge = $('recBadge');
+        const sourceLangSelect = $('sourceLang');
+        const targetLangSelect = $('targetLang');
+        const chunkDurationSelect = $('chunkDuration');
+        const chunkSetting = $('chunkSetting');
+        const infoBox = $('infoBox');
+        const ocrProgress = $('ocrProgress');
+        const ocrProgressBar = $('ocrProgressBar');
 
-        // ===== Utility Functions =====
+        // ===== Utilities =====
         function setStatus(text, type = 'idle') {
             statusBar.className = 'status-bar ' + type;
             let p = '';
@@ -521,9 +600,9 @@
         }
 
         function updateStats() {
-            document.getElementById('statChunks').textContent = stats.chunks;
-            document.getElementById('statSuccess').textContent = stats.success;
-            document.getElementById('statFailed').textContent = stats.failed;
+            $('statChunks').textContent = stats.chunks;
+            $('statSuccess').textContent = stats.success;
+            $('statFailed').textContent = stats.failed;
             if (stats.chunks > 0) statsBar.style.display = 'flex';
         }
 
@@ -541,43 +620,57 @@
             });
         }
 
-        function addResult(original, translation, isTextMode = false) {
+        function copyText(text, btn) {
+            navigator.clipboard.writeText(text).then(() => {
+                btn.textContent = '✓ نسخ';
+                btn.classList.add('copied');
+                setTimeout(() => { btn.textContent = 'نسخ'; btn.classList.remove('copied'); }, 1500);
+            });
+        }
+
+        // ===== Audio Result Card =====
+        function addResult(original, translation) {
             noResults.style.display = 'none';
             const card = document.createElement('div');
-            card.className = 'result-card' + (isTextMode ? ' text-card' : '');
-
-            const origDir = isTextMode
-                ? (isRTLLang(sourceLangSelect.value) ? 'rtl' : 'ltr')
-                : 'ltr';
-            const transDir = isRTLLang(targetLangSelect.value) ? 'rtl' : 'ltr';
-
+            card.className = 'result-card';
             card.innerHTML =
-                '<div class="lang-label">المصدر</div>' +
-                '<div class="original" dir="' + origDir + '" style="text-align:' + (origDir === 'rtl' ? 'right' : 'left') + '">' + escapeHtml(original) + '</div>' +
-                '<div class="lang-label" style="margin-top:8px;">الترجمة</div>' +
-                '<div class="translation" dir="' + transDir + '" style="text-align:' + (transDir === 'rtl' ? 'right' : 'left') + '">' + escapeHtml(translation) + '</div>';
-
+                '<div class="original" dir="ltr" style="text-align:left">' + escapeHtml(original) + '</div>' +
+                '<div class="translation" dir="' + (isRTLLang(targetLangSelect.value) ? 'rtl' : 'ltr') + '" style="text-align:' + (isRTLLang(targetLangSelect.value) ? 'right' : 'left') + '">' + escapeHtml(translation) + '</div>';
             resultsContainer.appendChild(card);
             resultsContainer.scrollTop = resultsContainer.scrollHeight;
         }
 
+        // ===== Text Result Card (Improved) =====
         function addTextResult(original, translation, thumbUrl) {
             noResults.style.display = 'none';
             const card = document.createElement('div');
-            card.className = 'result-card text-card';
+            card.className = 'text-result-card';
+
+            const wordCount = original.split(/\s+/).filter(w => w).length;
+            const paraCount = original.split(/\n\n+/).filter(p => p.trim()).length;
 
             const origDir = isRTLLang(sourceLangSelect.value) ? 'rtl' : 'ltr';
             const transDir = isRTLLang(targetLangSelect.value) ? 'rtl' : 'ltr';
 
-            let html = '';
-            if (thumbUrl) {
-                html += '<img class="thumb" src="' + thumbUrl + '" alt="لقطة" onclick="showScreenshotFull(this.src)">';
-            }
-            html +=
-                '<div class="lang-label">المصدر</div>' +
-                '<div class="original" dir="' + origDir + '" style="text-align:' + (origDir === 'rtl' ? 'right' : 'left') + '">' + escapeHtml(original) + '</div>' +
-                '<div class="lang-label" style="margin-top:8px;">الترجمة</div>' +
-                '<div class="translation" dir="' + transDir + '" style="text-align:' + (transDir === 'rtl' ? 'right' : 'left') + '">' + escapeHtml(translation) + '</div>';
+            let html = '<div class="text-card-header">';
+            html += '<div class="meta">';
+            if (thumbUrl) html += '<img class="thumb-sm" src="' + thumbUrl + '" onclick="showScreenshotFull(this.src)" title="اضغط لتكبير">';
+            html += '<span class="badge">📝 ' + wordCount + ' كلمة</span>';
+            if (paraCount > 1) html += '<span>' + paraCount + ' فقرات</span>';
+            html += '</div>';
+            html += '<button class="copy-btn" onclick="copyText(this.closest(\'.text-result-card\').querySelector(\'.trans-text\').textContent, this)">نسخ الترجمة</button>';
+            html += '</div>';
+
+            html += '<div class="text-card-body">';
+            html += '<div class="text-col text-col-orig">';
+            html += '<div class="text-col-header">المصدر</div>';
+            html += '<div class="text-content" dir="' + origDir + '" style="text-align:' + (origDir === 'rtl' ? 'right' : 'left') + '">' + escapeHtml(original) + '</div>';
+            html += '</div>';
+            html += '<div class="text-col text-col-trans">';
+            html += '<div class="text-col-header">الترجمة</div>';
+            html += '<div class="text-content trans-text" dir="' + transDir + '" style="text-align:' + (transDir === 'rtl' ? 'right' : 'left') + '">' + escapeHtml(translation) + '</div>';
+            html += '</div>';
+            html += '</div>';
 
             card.innerHTML = html;
             resultsContainer.appendChild(card);
@@ -595,23 +688,17 @@
         function switchMode(mode) {
             if (isCapturing) stopCapture();
             if (textCaptureBusy) return;
-
             currentMode = mode;
-
-            // Update tabs
             document.querySelectorAll('.mode-tab').forEach(t => {
                 t.classList.toggle('active', t.dataset.mode === mode);
             });
-
             if (mode === 'audio') {
-                // Audio mode UI
                 btnCapture.innerHTML = '🎙️ التقاط التبويب';
                 btnStop.classList.remove('hidden');
                 chunkSetting.classList.remove('hidden');
                 infoBox.innerHTML = '<strong>كيف تستعمل:</strong> اضغط "التقاط التبويب" ← اختر التبويب اللي فيه الفيديو ← شوف الفيديو والترجمة مع بعض!';
                 placeholderText.textContent = 'الفيديو هيك بيظهر هنا';
                 mediaPlaceholder.querySelector('.icon').textContent = '🎬';
-                // Reset left panel
                 screenshotPreview.style.display = 'none';
                 videoPlayer.style.display = 'block';
                 if (!videoPlayer.srcObject) {
@@ -619,15 +706,12 @@
                     videoPlayer.style.display = 'none';
                 }
             } else {
-                // Text mode UI
                 btnCapture.innerHTML = '📷 التقاط النصوص';
                 btnStop.classList.add('hidden');
                 chunkSetting.classList.add('hidden');
                 infoBox.innerHTML = '<strong>كيف تستعمل:</strong> اضغط "التقاط النصوص" ← اختر التبويب اللي فيه نصوص ← هيستخرج النص ويترجمه مع تبديل اتجاه الكتابة تلقائياً!';
                 placeholderText.textContent = 'لقطة الشاشة هيك بيظهر هنا';
                 mediaPlaceholder.querySelector('.icon').textContent = '📝';
-                // Reset left panel
-                if (isCapturing) stopCapture();
                 videoPlayer.style.display = 'none';
                 videoPlayer.srcObject = null;
                 if (!screenshotPreview.src || screenshotPreview.style.display === 'none') {
@@ -635,8 +719,56 @@
                 }
                 recBadge.classList.remove('active');
             }
-
             setStatus('جاهز للاستخدام');
+        }
+
+        // ===== OCR Post-Processing =====
+        function cleanOCRText(rawText) {
+            // Step 1: Normalize line endings
+            let text = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+            // Step 2: Remove excessive blank lines (keep max 2 newlines)
+            text = text.replace(/\n{3,}/g, '\n\n');
+
+            // Step 3: Trim trailing whitespace on each line
+            text = text.replace(/[^\S\n]+$/gm, '');
+
+            // Step 4: Split into paragraph blocks
+            const blocks = text.split(/\n\n+/);
+            const cleanedBlocks = [];
+
+            for (const block of blocks) {
+                const lines = block.split('\n').map(l => l.trim()).filter(l => l);
+                if (lines.length === 0) continue;
+
+                // Step 5: Merge short wrapped lines into proper sentences
+                const merged = [];
+                let current = '';
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    if (!current) {
+                        current = line;
+                        continue;
+                    }
+                    // Merge if: current line is short AND doesn't end with sentence-ending punctuation
+                    const endsWithPunctuation = /[.!?。！？:：;；,،]$/.test(current);
+                    const isShortLine = line.length < 100;
+                    const startsWithLower = /^[a-z]/.test(line);
+
+                    if (!endsWithPunctuation && (isShortLine || startsWithLower)) {
+                        current += ' ' + line;
+                    } else {
+                        merged.push(current);
+                        current = line;
+                    }
+                }
+                if (current) merged.push(current);
+
+                cleanedBlocks.push(merged.join('\n'));
+            }
+
+            const result = cleanedBlocks.join('\n\n');
+            return result.trim();
         }
 
         // ===== AUDIO MODE (unchanged) =====
@@ -667,16 +799,13 @@
                     return;
                 }
                 if (data.translation && data.text) {
-                    addResult(data.text, data.translation, false);
+                    addResult(data.text, data.translation);
                     stats.success++;
                     setStatus('تمت الترجمة ✓', 'success');
                     setTimeout(() => { if (isCapturing) setStatus('جاري الالتقاط...', 'capturing'); }, 1500);
                 }
             } catch (err) {
-                if (err.name !== 'AbortError') {
-                    stats.failed++;
-                    setStatus('خطأ في الاتصال', 'error');
-                }
+                if (err.name !== 'AbortError') { stats.failed++; setStatus('خطأ في الاتصال', 'error'); }
             }
             updateStats();
         }
@@ -685,41 +814,31 @@
             if (cooldown) { setStatus('انتظر قليلاً...', 'error'); return; }
             try {
                 setStatus('اختر التبويب اللي فيه الفيديو...', 'processing');
-                mediaStream = await navigator.mediaDevices.getDisplayMedia({
-                    video: true, audio: true,
-                });
+                mediaStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
                 const audioTracks = mediaStream.getAudioTracks();
                 if (audioTracks.length === 0) {
                     setStatus('لم يتم التقاط صوت! شارك الصوت.', 'error');
                     stopCapture(); return;
                 }
-
                 isCapturing = true;
                 btnCapture.disabled = true;
                 btnStop.disabled = false;
-
-                // Show video
                 videoPlayer.style.display = 'block';
                 screenshotPreview.style.display = 'none';
                 mediaPlaceholder.style.display = 'none';
                 videoPlayer.srcObject = mediaStream;
                 videoPlayer.muted = false;
                 recBadge.classList.add('active');
-
-                // Audio processing
                 audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
                 sourceNode = audioContext.createMediaStreamSource(new MediaStream(audioTracks));
                 processorNode = audioContext.createScriptProcessor(4096, 1, 1);
                 audioChunks = [];
-
                 processorNode.onaudioprocess = (e) => {
                     if (!isCapturing) return;
                     audioChunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
                 };
-
                 sourceNode.connect(processorNode);
                 processorNode.connect(audioContext.destination);
-
                 const chunkSeconds = parseInt(chunkDurationSelect.value);
                 clearInterval(chunkTimer);
                 chunkTimer = setInterval(async () => {
@@ -728,19 +847,11 @@
                     audioChunks = [];
                     if (wavBlob && wavBlob.size > 500) processChunk(wavBlob);
                 }, chunkSeconds * 1000);
-
                 setStatus('جاري الالتقاط... شاهد الفيديو!', 'capturing');
-
-                mediaStream.getVideoTracks()[0].addEventListener('ended', () => {
-                    if (isCapturing) stopCapture();
-                });
-
+                mediaStream.getVideoTracks()[0].addEventListener('ended', () => { if (isCapturing) stopCapture(); });
             } catch (err) {
-                if (err.name === 'NotAllowedError') {
-                    setStatus('تم إلغاء الاختيار', 'error');
-                } else {
-                    setStatus('خطأ: ' + err.message, 'error');
-                }
+                if (err.name === 'NotAllowedError') setStatus('تم إلغاء الاختيار', 'error');
+                else setStatus('خطأ: ' + err.message, 'error');
                 isCapturing = false;
                 btnCapture.disabled = false;
             }
@@ -775,23 +886,19 @@
             isCapturing = false;
             if (abortController) { abortController.abort(); abortController = null; }
             clearInterval(chunkTimer); chunkTimer = null;
-
             if (audioChunks.length > 0) {
                 const wavBlob = createWavFromChunks(audioChunks);
                 audioChunks = [];
                 if (wavBlob) processChunk(wavBlob);
             }
-
             if (processorNode) { processorNode.disconnect(); processorNode = null; }
             if (sourceNode) { sourceNode.disconnect(); sourceNode = null; }
             if (audioContext) { audioContext.close().catch(() => {}); audioContext = null; }
             if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
-
             videoPlayer.srcObject = null;
             mediaPlaceholder.style.display = 'flex';
             if (currentMode === 'audio') videoPlayer.style.display = 'none';
             recBadge.classList.remove('active');
-
             cooldown = true;
             btnCapture.disabled = true;
             btnStop.disabled = true;
@@ -799,7 +906,7 @@
             setTimeout(() => { cooldown = false; btnCapture.disabled = false; setStatus('جاهز للاستخدام'); }, 3000);
         }
 
-        // ===== TEXT / OCR MODE =====
+        // ===== TEXT / OCR MODE (Improved) =====
         async function loadTesseract() {
             if (tesseractLoaded) return;
             setStatus('جاري تحميل محرك OCR (أول مرة فقط)...', 'processing');
@@ -815,10 +922,7 @@
 
         async function initOCRWorker(lang) {
             const tessLang = TESS_LANG_MAP[lang] || 'eng';
-            if (ocrWorker) {
-                try { await ocrWorker.terminate(); } catch(e) {}
-                ocrWorker = null;
-            }
+            if (ocrWorker) { try { await ocrWorker.terminate(); } catch(e) {} ocrWorker = null; }
             ocrWorker = await Tesseract.createWorker(tessLang, 1, {
                 logger: (m) => {
                     if (m.status === 'recognizing text') {
@@ -838,57 +942,39 @@
             if (cooldown || textCaptureBusy) { setStatus('انتظر قليلاً...', 'error'); return; }
             textCaptureBusy = true;
             btnCapture.disabled = true;
-
-            // Show progress bar
             ocrProgress.classList.add('active');
             ocrProgressBar.style.width = '0%';
 
             let stream = null;
             try {
-                // Load Tesseract if needed
                 await loadTesseract();
-
-                // Init OCR worker with source language
                 const srcLang = sourceLangSelect.value;
-                setStatus('جاري تحميل محرك OCR للغة: ' + (TESS_LANG_MAP[srcLang] || 'eng') + '...', 'processing');
+                setStatus('جاري تحميل محرك OCR...', 'processing');
                 await initOCRWorker(srcLang);
 
-                // Capture screen
                 setStatus('اختر التبويب اللي فيه النصوص...', 'processing');
                 stream = await navigator.mediaDevices.getDisplayMedia({
                     video: { displaySurface: 'browser' },
                     audio: false
                 });
 
-                // Get video frame
                 const tempVideo = document.createElement('video');
                 tempVideo.srcObject = stream;
                 tempVideo.muted = true;
-
-                await new Promise((resolve) => {
-                    tempVideo.onloadeddata = resolve;
-                    tempVideo.play().catch(resolve);
-                });
-
-                // Wait for frame to render
+                await new Promise((resolve) => { tempVideo.onloadeddata = resolve; tempVideo.play().catch(resolve); });
                 await new Promise(r => setTimeout(r, 600));
 
-                // Draw to canvas
                 const canvas = document.createElement('canvas');
                 canvas.width = tempVideo.videoWidth || 1280;
                 canvas.height = tempVideo.videoHeight || 720;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(tempVideo, 0, 0);
 
-                // Stop stream immediately
                 stream.getTracks().forEach(t => t.stop());
                 stream = null;
                 tempVideo.srcObject = null;
 
-                // Get screenshot
                 const imageDataURL = canvas.toDataURL('image/jpeg', 0.85);
-
-                // Show screenshot on left panel
                 screenshotPreview.src = imageDataURL;
                 screenshotPreview.style.display = 'block';
                 videoPlayer.style.display = 'none';
@@ -897,61 +983,76 @@
                 // Run OCR
                 setStatus('جاري استخراج النص (OCR)...', 'processing');
                 ocrProgressBar.style.width = '10%';
-
-                const { data: { text: extractedText } } = await ocrWorker.recognize(canvas);
-
+                const { data: { text: rawText } } = await ocrWorker.recognize(canvas);
                 ocrProgress.classList.remove('active');
 
-                if (!extractedText || !extractedText.trim()) {
-                    stats.chunks++;
-                    stats.failed++;
-                    updateStats();
+                if (!rawText || !rawText.trim()) {
+                    stats.chunks++; stats.failed++; updateStats();
                     setStatus('لم يتم العثور على نص في الصورة. جرّب لغة مصدر مختلفة.', 'error');
                     setTimeout(() => setStatus('جاهز للاستخدام'), 3000);
                     return;
                 }
 
-                const cleanText = extractedText.trim();
-                setStatus('جاري الترجمة...', 'processing');
+                // ===== Clean OCR text =====
+                const cleanText = cleanOCRText(rawText);
+                setStatus('جاري ترجمة ' + cleanText.split(/\n\n+/).length + ' فقرات...', 'processing');
 
-                // Translate
-                const response = await fetch(API_URL + '/translate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        text: cleanText,
-                        target_lang: targetLangSelect.value,
-                    }),
-                });
+                // ===== Translate paragraph by paragraph =====
+                const paragraphs = cleanText.split(/\n\n+/).filter(p => p.trim());
+                let translatedParagraphs;
 
-                const data = await response.json();
-                const translation = data.translation || cleanText;
+                try {
+                    const response = await fetch(API_URL + '/translate-blocks', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            blocks: paragraphs,
+                            target_lang: targetLangSelect.value,
+                        }),
+                    });
+                    const data = await response.json();
+                    if (data.translations) {
+                        translatedParagraphs = data.translations;
+                    } else {
+                        throw new Error('فشل الترجمة');
+                    }
+                } catch (err) {
+                    // Fallback: translate entire text as one block
+                    setStatus('جاري الترجمة (وضع احتياطي)...', 'processing');
+                    try {
+                        const fallbackResp = await fetch(API_URL + '/translate', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ text: cleanText, target_lang: targetLangSelect.value }),
+                        });
+                        const fallbackData = await fallbackResp.json();
+                        translatedParagraphs = [fallbackData.translation || cleanText];
+                    } catch (e2) {
+                        translatedParagraphs = paragraphs; // show original if everything fails
+                    }
+                }
 
-                // Add result card with thumbnail
-                addTextResult(cleanText, translation, imageDataURL);
+                // Reassemble with preserved paragraph structure
+                const finalTranslation = translatedParagraphs
+                    .map((t, i) => t || paragraphs[i])
+                    .join('\n\n');
+
+                addTextResult(cleanText, finalTranslation, imageDataURL);
 
                 stats.chunks++;
                 stats.success++;
                 updateStats();
-                setStatus('تم استخراج وترجمة النصوص ✓', 'success');
+                setStatus('تم استخراج وترجمة ' + paragraphs.length + ' فقرة ✓', 'success');
 
             } catch (err) {
                 ocrProgress.classList.remove('active');
-                if (err.name === 'NotAllowedError') {
-                    setStatus('تم إلغاء الاختيار', 'error');
-                } else {
-                    stats.chunks++;
-                    stats.failed++;
-                    updateStats();
-                    setStatus('خطأ: ' + err.message, 'error');
-                }
+                if (err.name === 'NotAllowedError') setStatus('تم إلغاء الاختيار', 'error');
+                else { stats.chunks++; stats.failed++; updateStats(); setStatus('خطأ: ' + err.message, 'error'); }
             } finally {
-                if (stream) { stream.getTracks().forEach(t => t.stop()); }
+                if (stream) stream.getTracks().forEach(t => t.stop());
                 textCaptureBusy = false;
                 btnCapture.disabled = false;
-                setTimeout(() => {
-                    if (!textCaptureBusy) setStatus('جاهز للاستخدام');
-                }, 2000);
+                setTimeout(() => { if (!textCaptureBusy) setStatus('جاهز للاستخدام'); }, 2000);
             }
         }
 
@@ -960,7 +1061,6 @@
             resultsContainer.innerHTML = '<div class="no-results" id="noResults"><div class="icon">🎙️</div><p>الترجمات بتظهر هنا</p></div>';
             stats = { chunks: 0, success: 0, failed: 0 };
             updateStats(); statsBar.style.display = 'none';
-            // Reset left panel
             screenshotPreview.style.display = 'none';
             screenshotPreview.src = '';
             videoPlayer.srcObject = null;
@@ -970,22 +1070,12 @@
 
         // ===== Event Listeners =====
         btnCapture.addEventListener('click', () => {
-            if (currentMode === 'audio') {
-                startAudioCapture();
-            } else {
-                startTextCapture();
-            }
+            if (currentMode === 'audio') startAudioCapture();
+            else startTextCapture();
         });
-
         btnStop.addEventListener('click', stopCapture);
         btnClear.addEventListener('click', clearResults);
-
-        // Source lang change → re-init OCR worker if in text mode
-        sourceLangSelect.addEventListener('change', async () => {
-            if (currentMode === 'text' && tesseractLoaded) {
-                ocrWorker = null; // Will re-init on next capture
-            }
-        });
+        sourceLangSelect.addEventListener('change', () => { if (currentMode === 'text' && tesseractLoaded) ocrWorker = null; });
 
         // ===== Health Check =====
         fetch(API_URL + '/health').then(r => r.json()).then(d => {
