@@ -3,608 +3,768 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VidLingo — ترجمة الفيديو بالذكاء الاصطناعي</title>
-    <meta name="description" content="ترجم مقاطع الفيديو مباشرة من المتصفح باستخدام الذكاء الاصطناعي. دعم العربية والإنجليزية وعشرات اللغات.">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <title>VidLingo - مترجم الفيديو</title>
     <style>
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-:root {
-    --bg: #0a0a0f;
-    --bg-card: rgba(255, 255, 255, 0.04);
-    --bg-card-hover: rgba(255, 255, 255, 0.08);
-    --border: rgba(255, 255, 255, 0.08);
-    --text: #e4e4e7;
-    --text-dim: #71717a;
-    --accent: #a78bfa;
-    --accent2: #f472b6;
-    --accent3: #38bdf8;
-    --radius: 16px;
-    --radius-sm: 10px;
-}
-html { scroll-behavior: smooth; color-scheme: dark; }
-body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background: var(--bg); color: var(--text); line-height: 1.7;
-    overflow-x: hidden; min-height: 100vh; display: flex; flex-direction: column;
-}
-main { flex: 1; }
-.bg-mesh {
-    position: fixed; inset: 0; z-index: -1;
-    background:
-        radial-gradient(ellipse 600px 600px at 20% 30%, rgba(167,139,250,0.12), transparent),
-        radial-gradient(ellipse 500px 500px at 80% 60%, rgba(244,114,182,0.08), transparent),
-        radial-gradient(ellipse 400px 400px at 50% 80%, rgba(56,189,248,0.06), transparent);
-    animation: meshMove 20s ease-in-out infinite alternate;
-}
-@keyframes meshMove {
-    0% { transform: scale(1) translate(0,0); }
-    50% { transform: scale(1.1) translate(-2%,3%); }
-    100% { transform: scale(1) translate(2%,-2%); }
-}
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
-.navbar {
-    position: sticky; top: 0; z-index: 100;
-    backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%);
-    background: rgba(10,10,15,0.7); border-bottom: 1px solid var(--border);
-}
-.nav-container {
-    max-width: 1200px; margin: 0 auto; padding: 0 24px;
-    height: 64px; display: flex; align-items: center; justify-content: space-between;
-}
-.logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); }
-.logo-icon { font-size: 24px; color: var(--accent); }
-.logo-text { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
-.accent { color: var(--accent); }
-.nav-links { display: flex; gap: 32px; }
-.nav-links a { color: var(--text-dim); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
-.nav-links a:hover { color: var(--text); }
-.mobile-menu-btn {
-    display: none; flex-direction: column; gap: 5px;
-    background: none; border: none; cursor: pointer; padding: 4px;
-}
-.mobile-menu-btn span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; transition: 0.3s; }
-.hero { text-align: center; padding: 100px 24px 60px; max-width: 800px; margin: 0 auto; }
-.hero-badge {
-    display: inline-block; padding: 8px 20px; border-radius: 100px;
-    background: var(--bg-card); border: 1px solid var(--border);
-    font-size: 13px; font-weight: 500; color: var(--text-dim); margin-bottom: 28px;
-}
-.hero h1 { font-size: clamp(2.2rem,5vw,3.8rem); font-weight: 800; line-height: 1.15; margin-bottom: 20px; letter-spacing: -1px; }
-.gradient-text {
-    background: linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3));
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-}
-.hero p { font-size: 17px; color: var(--text-dim); max-width: 560px; margin: 0 auto 36px; line-height: 1.8; }
-.cta-btn {
-    display: inline-block; padding: 14px 36px; border-radius: 12px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    color: #fff; text-decoration: none; font-weight: 600; font-size: 15px;
-    transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 4px 24px rgba(167,139,250,0.25);
-}
-.cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(167,139,250,0.35); }
-.tool-section { padding: 40px 24px 80px; max-width: 1000px; margin: 0 auto; }
-.tool-container {
-    background: var(--bg-card); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 24px; backdrop-filter: blur(12px);
-}
-.controls-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
-.lang-selectors { display: flex; align-items: center; gap: 12px; }
-.lang-group { display: flex; flex-direction: column; gap: 4px; }
-.lang-group label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); }
-.lang-group select {
-    padding: 10px 16px; border-radius: var(--radius-sm);
-    background: rgba(255,255,255,0.06); border: 1px solid var(--border);
-    color: var(--text); font-family: inherit; font-size: 14px;
-    cursor: pointer; outline: none; min-width: 160px; transition: border-color 0.2s;
-}
-.lang-group select:focus { border-color: var(--accent); }
-.swap-btn {
-    width: 40px; height: 40px; border-radius: 50%; background: var(--bg-card);
-    border: 1px solid var(--border); color: var(--text-dim); font-size: 18px;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: all 0.2s; margin-top: 16px;
-}
-.swap-btn:hover { background: var(--bg-card-hover); color: var(--text); transform: rotate(180deg); }
-.capture-btn {
-    display: flex; align-items: center; gap: 10px; padding: 12px 28px;
-    border-radius: 12px; background: linear-gradient(135deg, #ef4444, #dc2626);
-    border: none; color: #fff; font-family: inherit; font-size: 15px; font-weight: 600;
-    cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 16px rgba(239,68,68,0.3);
-}
-.capture-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(239,68,68,0.4); }
-.capture-btn.active { background: linear-gradient(135deg, #22c55e, #16a34a); box-shadow: 0 4px 16px rgba(34,197,94,0.3); }
-.capture-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-.capture-icon { font-size: 18px; }
-.video-wrapper { position: relative; width: 100%; aspect-ratio: 16/9; border-radius: var(--radius-sm); overflow: hidden; background: #000; }
-.video-wrapper video { width: 100%; height: 100%; object-fit: contain; display: none; }
-.video-wrapper video.active { display: block; }
-.placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; color: var(--text-dim); }
-.placeholder.hidden { display: none; }
-.placeholder-icon { font-size: 48px; opacity: 0.3; }
-.placeholder p { font-size: 15px; }
-.subtitle-overlay {
-    position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); z-index: 10;
-    display: flex; flex-direction: column-reverse; align-items: center; gap: 8px;
-    pointer-events: none; width: 90%; max-width: 700px;
-}
-.subtitle-line {
-    background: rgba(0,0,0,0.8); color: #fff; padding: 8px 20px; border-radius: 8px;
-    font-size: 18px; font-weight: 500; text-align: center; line-height: 1.6;
-    max-width: 100%; word-wrap: break-word; animation: subtitleIn 0.3s ease-out;
-    backdrop-filter: blur(8px);
-}
-@keyframes subtitleIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-.status-bar { display: flex; align-items: center; gap: 10px; padding: 14px 0 0; font-size: 13px; color: var(--text-dim); }
-.status-indicator { width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); transition: background 0.3s; }
-.status-indicator.ready { background: #22c55e; }
-.status-indicator.loading { background: #f59e0b; animation: pulse 1s infinite; }
-.status-indicator.capturing { background: #3b82f6; animation: pulse 1.5s infinite; }
-.status-indicator.error { background: #ef4444; }
-@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
-.visualizer { display: flex; align-items: flex-end; justify-content: center; gap: 2px; height: 40px; padding-top: 16px; opacity: 0.3; transition: opacity 0.3s; }
-.visualizer.active { opacity: 1; }
-.viz-bar { width: 3px; min-height: 2px; border-radius: 2px; background: linear-gradient(to top, var(--accent), var(--accent2)); transition: height 0.05s ease-out; }
-.features-section { padding: 80px 24px; max-width: 1200px; margin: 0 auto; }
-.features-section h2 { text-align: center; font-size: clamp(1.8rem,3vw,2.5rem); font-weight: 800; margin-bottom: 48px; letter-spacing: -0.5px; }
-.bento-grid { display: grid; grid-template-columns: repeat(3,1fr); grid-auto-rows: 180px; gap: 16px; }
-.bento-card {
-    background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 28px; display: flex; flex-direction: column; justify-content: center;
-    transition: all 0.3s; backdrop-filter: blur(8px);
-}
-.bento-card:hover { background: var(--bg-card-hover); border-color: rgba(255,255,255,0.12); transform: translateY(-2px); }
-.bento-large { grid-column: span 2; }
-.bento-wide { grid-column: span 3; }
-.bento-icon { font-size: 32px; margin-bottom: 12px; }
-.bento-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
-.bento-card p { font-size: 14px; color: var(--text-dim); line-height: 1.7; }
-.how-section { padding: 80px 24px; max-width: 1000px; margin: 0 auto; }
-.how-section h2 { text-align: center; font-size: clamp(1.8rem,3vw,2.5rem); font-weight: 800; margin-bottom: 56px; letter-spacing: -0.5px; }
-.steps { display: flex; align-items: center; justify-content: center; gap: 0; }
-.step { text-align: center; flex: 0 0 200px; }
-.step-num { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; font-size: 20px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
-.step h3 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
-.step p { font-size: 13px; color: var(--text-dim); line-height: 1.7; padding: 0 12px; }
-.step-connector { width: 60px; height: 2px; background: var(--border); flex-shrink: 0; margin-bottom: 40px; }
-footer { border-top: 1px solid var(--border); padding: 32px 24px; text-align: center; margin-top: auto; }
-.footer-content { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.footer-content p { font-size: 13px; color: var(--text-dim); }
-@media (max-width: 768px) {
-    .mobile-menu-btn { display: flex; }
-    .nav-links { display: none; position: absolute; top: 64px; right: 0; left: 0; flex-direction: column; background: rgba(10,10,15,0.95); backdrop-filter: blur(20px); padding: 16px 24px; gap: 0; border-bottom: 1px solid var(--border); }
-    .nav-links.open { display: flex; }
-    .nav-links a { padding: 12px 0; font-size: 15px; border-bottom: 1px solid var(--border); }
-    .hero { padding: 60px 20px 40px; }
-    .hero h1 { font-size: 2rem; }
-    .controls-bar { flex-direction: column; align-items: stretch; }
-    .lang-selectors { justify-content: center; }
-    .lang-group select { min-width: 130px; }
-    .capture-btn { justify-content: center; width: 100%; }
-    .subtitle-line { font-size: 15px; padding: 6px 14px; }
-    .bento-grid { grid-template-columns: 1fr; grid-auto-rows: auto; }
-    .bento-large, .bento-wide { grid-column: span 1; }
-    .bento-card { padding: 20px; }
-    .steps { flex-direction: column; gap: 0; }
-    .step { flex: none; }
-    .step-connector { width: 2px; height: 40px; margin: 0 auto; }
-    .visualizer { height: 30px; }
-    .viz-bar { width: 2px; }
-}
-@media (max-width: 480px) {
-    .lang-group select { min-width: 110px; font-size: 13px; padding: 8px 12px; }
-    .subtitle-line { font-size: 13px; }
-}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+            background: #0f0f1a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0 20px;
+        }
+
+        header h1 {
+            font-size: 2.2em;
+            color: #7c3aed;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            color: #888;
+            font-size: 1em;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.05em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: inherit;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+            color: white;
+        }
+
+        .btn-start:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4);
+        }
+
+        .btn-stop {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            color: white;
+        }
+
+        .btn-stop:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 4px 20px rgba(220, 38, 38, 0.4);
+        }
+
+        .btn-clear {
+            background: #374151;
+            color: #d1d5db;
+        }
+
+        .btn-clear:hover:not(:disabled) {
+            background: #4b5563;
+        }
+
+        /* Settings */
+        .settings {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 16px 0;
+            padding: 16px;
+            background: #1a1a2e;
+            border-radius: 12px;
+        }
+
+        .setting-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .setting-group label {
+            font-size: 0.9em;
+            color: #aaa;
+        }
+
+        .setting-group select,
+        .setting-group input {
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background: #252540;
+            color: #e0e0e0;
+            font-family: inherit;
+            font-size: 0.9em;
+        }
+
+        /* Status */
+        .status-bar {
+            text-align: center;
+            padding: 10px;
+            margin: 12px 0;
+            border-radius: 10px;
+            font-size: 0.95em;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .status-bar.idle {
+            background: #1a1a2e;
+            color: #666;
+        }
+
+        .status-bar.capturing {
+            background: rgba(124, 58, 237, 0.15);
+            color: #a78bfa;
+        }
+
+        .status-bar.processing {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+        }
+
+        .status-bar.error {
+            background: rgba(220, 38, 38, 0.15);
+            color: #f87171;
+        }
+
+        .status-bar.success {
+            background: rgba(34, 197, 94, 0.15);
+            color: #4ade80;
+        }
+
+        .pulse {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        .pulse.red { background: #ef4444; }
+        .pulse.blue { background: #3b82f6; }
+        .pulse.purple { background: #7c3aed; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.3); }
+        }
+
+        /* Results */
+        .results {
+            margin-top: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .result-card {
+            background: #1a1a2e;
+            border-radius: 12px;
+            padding: 16px;
+            border-right: 4px solid #7c3aed;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-card .original {
+            color: #9ca3af;
+            font-size: 0.9em;
+            margin-bottom: 6px;
+            direction: ltr;
+            text-align: left;
+        }
+
+        .result-card .translation {
+            color: #e0e0e0;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+
+        .results-container {
+            max-height: 500px;
+            overflow-y: auto;
+            padding-left: 8px;
+        }
+
+        .results-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .results-container::-webkit-scrollbar-track {
+            background: #1a1a2e;
+            border-radius: 3px;
+        }
+
+        .results-container::-webkit-scrollbar-thumb {
+            background: #7c3aed;
+            border-radius: 3px;
+        }
+
+        /* No results */
+        .no-results {
+            text-align: center;
+            padding: 40px 20px;
+            color: #555;
+        }
+
+        .no-results .icon {
+            font-size: 3em;
+            margin-bottom: 12px;
+        }
+
+        /* Stats */
+        .stats {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 16px 0;
+            padding: 12px;
+            background: #1a1a2e;
+            border-radius: 10px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat .value {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #7c3aed;
+        }
+
+        .stat .label {
+            font-size: 0.8em;
+            color: #888;
+        }
+
+        /* Info box */
+        .info-box {
+            background: rgba(124, 58, 237, 0.1);
+            border: 1px solid rgba(124, 58, 237, 0.3);
+            border-radius: 10px;
+            padding: 16px;
+            margin: 16px 0;
+            font-size: 0.9em;
+            line-height: 1.7;
+            color: #bbb;
+        }
+
+        .info-box strong {
+            color: #a78bfa;
+        }
     </style>
 </head>
 <body>
-    <div class="bg-mesh"></div>
-    <nav class="navbar">
-        <div class="nav-container">
-            <a href="#" class="logo">
-                <span class="logo-icon">▶</span>
-                <span class="logo-text">Vid<span class="accent">Lingo</span></span>
-            </a>
-            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="القائمة">
-                <span></span><span></span><span></span>
+    <div class="container">
+        <header>
+            <h1>🎬 VidLingo</h1>
+            <p>مترجم الفيديو بالذكاء الاصطناعي — Whisper large-v3-turbo</p>
+        </header>
+
+        <div class="info-box">
+            <strong>كيف تستعمل:</strong> اضغط "التقاط التبويب" → اختر التبويب اللي فيه الفيديو → الترجمة رح تظهر تلقائياً.
+            النموذج الجديد (Whisper large-v3-turbo via Groq) أدق بكتير من السابق.
+        </div>
+
+        <div class="settings">
+            <div class="setting-group">
+                <label>لغة المصدر:</label>
+                <select id="sourceLang">
+                    <option value="auto">تلقائي</option>
+                    <option value="en">English</option>
+                    <option value="ar">العربية</option>
+                    <option value="fr">Français</option>
+                    <option value="es">Español</option>
+                    <option value="tr">Türkçe</option>
+                    <option value="de">Deutsch</option>
+                    <option value="ja">日本語</option>
+                    <option value="ko">한국어</option>
+                    <option value="zh">中文</option>
+                    <option value="hi">हिन्दी</option>
+                    <option value="ur">اردو</option>
+                </select>
+            </div>
+            <div class="setting-group">
+                <label>لغة الترجمة:</label>
+                <select id="targetLang">
+                    <option value="ar">العربية</option>
+                    <option value="en">English</option>
+                    <option value="fr">Français</option>
+                    <option value="es">Español</option>
+                    <option value="tr">Türkçe</option>
+                </select>
+            </div>
+            <div class="setting-group">
+                <label>مدة القطعة (ثواني):</label>
+                <select id="chunkDuration">
+                    <option value="5">5</option>
+                    <option value="8" selected>8</option>
+                    <option value="10">10</option>
+                    <option value="15">15</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="btnCapture" class="btn btn-start">
+                🎙️ التقاط التبويب
             </button>
-            <div class="nav-links" id="navLinks">
-                <a href="#tool">الأداة</a>
-                <a href="#features">المميزات</a>
-                <a href="#how-it-works">كيف تعمل</a>
+            <button id="btnStop" class="btn btn-stop" disabled>
+                ⏹️ إيقاف الالتقاط
+            </button>
+            <button id="btnClear" class="btn btn-clear">
+                🗑️ مسح الكل
+            </button>
+        </div>
+
+        <div id="statusBar" class="status-bar idle">
+            جاهز للاستخدام
+        </div>
+
+        <div class="stats" id="statsBar" style="display:none;">
+            <div class="stat">
+                <div class="value" id="statChunks">0</div>
+                <div class="label">قطع مرسلة</div>
+            </div>
+            <div class="stat">
+                <div class="value" id="statSuccess">0</div>
+                <div class="label">ترجمة ناجحة</div>
+            </div>
+            <div class="stat">
+                <div class="value" id="statFailed">0</div>
+                <div class="label">فشل</div>
             </div>
         </div>
-    </nav>
-    <main>
-        <section class="hero">
-            <div class="hero-badge">🚀 مجاني 100% — ترجمة فورية</div>
-            <h1>ترجم أي فيديو <span class="gradient-text">بضغطة زر</span></h1>
-            <p>التقط تبويب اليوتيوب وشاهد الترجمة النصية مباشرة. بدون تسجيل، بدون تحميل.</p>
-            <a href="#tool" class="cta-btn">جرّب الآن ←</a>
-        </section>
-        <section id="tool" class="tool-section">
-            <div class="tool-container">
-                <div class="controls-bar">
-                    <div class="lang-selectors">
-                        <div class="lang-group">
-                            <label for="sourceLang">من</label>
-                            <select id="sourceLang">
-                                <option value="en">English</option>
-                                <option value="ar">العربية</option>
-                                <option value="fr">Français</option>
-                                <option value="es">Español</option>
-                                <option value="de">Deutsch</option>
-                                <option value="tr">Türkçe</option>
-                                <option value="ja">日本語</option>
-                                <option value="ko">한국어</option>
-                                <option value="zh">中文</option>
-                                <option value="hi">हिन्दी</option>
-                                <option value="pt">Português</option>
-                                <option value="ru">Русский</option>
-                                <option value="it">Italiano</option>
-                                <option value="ur">اردو</option>
-                            </select>
-                        </div>
-                        <button class="swap-btn" id="swapBtn" aria-label="تبديل اللغتين" title="تبديل">⇄</button>
-                        <div class="lang-group">
-                            <label for="targetLang">إلى</label>
-                            <select id="targetLang">
-                                <option value="ar" selected>العربية</option>
-                                <option value="en">English</option>
-                                <option value="fr">Français</option>
-                                <option value="es">Español</option>
-                                <option value="de">Deutsch</option>
-                                <option value="tr">Türkçe</option>
-                                <option value="ja">日本語</option>
-                                <option value="ko">한국어</option>
-                                <option value="zh">中文</option>
-                                <option value="hi">हिन्दी</option>
-                                <option value="pt">Português</option>
-                                <option value="ru">Русский</option>
-                                <option value="it">Italiano</option>
-                                <option value="ur">اردو</option>
-                            </select>
-                        </div>
-                    </div>
-                    <button class="capture-btn" id="captureBtn">
-                        <span class="capture-icon">◯</span>
-                        <span class="capture-text">التقط التبويب</span>
-                    </button>
-                </div>
-                <div class="video-wrapper" id="videoWrapper">
-                    <video id="videoPlayer" autoplay playsinline></video>
-                    <div class="subtitle-overlay" id="subtitleOverlay"></div>
-                    <div class="placeholder" id="placeholder">
-                        <div class="placeholder-icon">▶</div>
-                        <p>اضغط "التقط التبويب" واختر تبويب اليوتيوب</p>
-                    </div>
-                </div>
-                <div class="status-bar" id="statusBar">
-                    <div class="status-indicator" id="statusIndicator"></div>
-                    <span id="statusText">جاهز</span>
-                </div>
-                <div class="visualizer" id="visualizer">
-                    <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
-                    <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
-                    <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
-                    <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
-                    <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
-                    <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
-                    <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
-                    <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
-                    <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
-                    <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
-                    <div class="viz-bar"></div><div class="viz-bar"></div><div class="viz-bar"></div>
+
+        <div class="results">
+            <div id="resultsContainer" class="results-container">
+                <div class="no-results" id="noResults">
+                    <div class="icon">🎤</div>
+                    <p>الترجمات ستظهر هنا</p>
                 </div>
             </div>
-        </section>
-        <section id="features" class="features-section">
-            <h2>لماذا <span class="gradient-text">VidLingo</span>؟</h2>
-            <div class="bento-grid">
-                <div class="bento-card bento-large">
-                    <div class="bento-icon">🧠</div>
-                    <h3>ذكاء اصطناعي قوي</h3>
-                    <p>نموذج Whisper عبر API مخصص يوفر دقة عالية وسرعة فائقة في النسخ والترجمة.</p>
-                </div>
-                <div class="bento-card">
-                    <div class="bento-icon">🔒</div>
-                    <h3>خصوصية تامة</h3>
-                    <p>لا تسجيل، لا كوكيز، لا تتبع.</p>
-                </div>
-                <div class="bento-card">
-                    <div class="bento-icon">🌍</div>
-                    <h3>14+ لغة</h3>
-                    <p>دعم كامل للعربية والإنجليزية والفرنسية واليابانية والمزيد.</p>
-                </div>
-                <div class="bento-card">
-                    <div class="bento-icon">⚡</div>
-                    <h3>سريع</h3>
-                    <p>ترجمة شبه فورية مع عرض الترجمة فوق الفيديو مباشرة.</p>
-                </div>
-                <div class="bento-card bento-wide">
-                    <div class="bento-icon">📱</div>
-                    <h3>يعمل على كل الأجهزة</h3>
-                    <p>متوافق مع الكمبيوتر والجوال. واجهة متجاوبة تصميم عصري.</p>
-                </div>
-            </div>
-        </section>
-        <section id="how-it-works" class="how-section">
-            <h2>كيف <span class="gradient-text">تعمل</span>؟</h2>
-            <div class="steps">
-                <div class="step">
-                    <div class="step-num">1</div>
-                    <h3>اختر التبويب</h3>
-                    <p>اضغط "التقط التبويب" واختر تبويب اليوتيوب المفتوح</p>
-                </div>
-                <div class="step-connector"></div>
-                <div class="step">
-                    <div class="step-num">2</div>
-                    <h3>يتم التقاط الصوت</h3>
-                    <p>الذكاء الاصطناعي يحول الكلام إلى نص تلقائياً</p>
-                </div>
-                <div class="step-connector"></div>
-                <div class="step">
-                    <div class="step-num">3</div>
-                    <h3>ترجمة فورية</h3>
-                    <p>النص يُترجم ويعرض كترجمة فوق الفيديو مباشرة</p>
-                </div>
-            </div>
-        </section>
-    </main>
-    <footer>
-        <div class="footer-content">
-            <span class="logo-text">Vid<span class="accent">Lingo</span></span>
-            <p>مبني بـ ❤️ — مجاني ومفتوح للجميع</p>
         </div>
-    </footer>
+    </div>
+
     <script>
-const API_URL = 'https://video-downloader-6qc1.onrender.com';
-const REQUEST_TIMEOUT = 15000;
+        // === Config ===
+        const API_URL = 'https://video-downloader-6qc1.onrender.com';
+        
+        // === State ===
+        let mediaStream = null;
+        let mediaRecorder = null;
+        let audioContext = null;
+        let processorNode = null;
+        let sourceNode = null;
+        let isCapturing = false;
+        let abortController = null;
+        let chunkTimer = null;
+        let audioChunks = [];
+        let currentRecordingChunks = [];
+        let stats = { chunks: 0, success: 0, failed: 0 };
+        let cooldown = false;
 
-// Pre-warm API on page load
-fetch(API_URL + '/health').catch(() => {});
-const toolObserver = new IntersectionObserver((entries) => {
-    if (entries[0].isIntersecting) { fetch(API_URL + '/health').catch(() => {}); toolObserver.disconnect(); }
-}, { threshold: 0.1 });
-toolObserver.observe(document.getElementById('tool'));
+        // === DOM ===
+        const btnCapture = document.getElementById('btnCapture');
+        const btnStop = document.getElementById('btnStop');
+        const btnClear = document.getElementById('btnClear');
+        const statusBar = document.getElementById('statusBar');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const noResults = document.getElementById('noResults');
+        const statsBar = document.getElementById('statsBar');
+        const sourceLangSelect = document.getElementById('sourceLang');
+        const targetLangSelect = document.getElementById('targetLang');
+        const chunkDurationSelect = document.getElementById('chunkDuration');
 
-const Capture = {
-    stream: null, audioContext: null, analyser: null, sourceNode: null, processorNode: null, audioChunks: [],
-    async start() {
-        try {
-            // Add timeout to getDisplayMedia so it doesn't hang forever
-            const mediaPromise = navigator.mediaDevices.getDisplayMedia({ video: { cursor: 'never' }, audio: true });
-            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('capture_timeout')), 15000));
-            this.stream = await Promise.race([mediaPromise, timeoutPromise]);
-            const video = document.getElementById('videoPlayer');
-            video.srcObject = this.stream; video.classList.add('active');
-            document.getElementById('placeholder').classList.add('hidden');
-            this.stream.getVideoTracks()[0].addEventListener('ended', () => App.onCaptureEnded());
-            this.setupAudio();
-            return true;
-        } catch (err) {
-            console.error('Capture error:', err);
-            this.stream = null;
-            return false;
+        // === Status Helper ===
+        function setStatus(text, type = 'idle') {
+            statusBar.className = `status-bar ${type}`;
+            let pulseHTML = '';
+            if (type === 'capturing') pulseHTML = '<span class="pulse purple"></span>';
+            if (type === 'processing') pulseHTML = '<span class="pulse blue"></span>';
+            if (type === 'error') pulseHTML = '<span class="pulse red"></span>';
+            statusBar.innerHTML = pulseHTML + ' ' + text;
         }
-    },
-    setupAudio() {
-        const audioTracks = this.stream.getAudioTracks();
-        if (!audioTracks.length) return;
-        this.audioContext = new AudioContext({ sampleRate: 16000 });
-        this.sourceNode = this.audioContext.createMediaStreamSource(new MediaStream(audioTracks));
-        this.analyser = this.audioContext.createAnalyser();
-        this.analyser.fftSize = 256;
-        this.sourceNode.connect(this.analyser);
-        const processor = this.audioContext.createScriptProcessor(4096, 1, 1);
-        this.processorNode = processor;
-        processor.onaudioprocess = (e) => { this.audioChunks.push(new Float32Array(e.inputBuffer.getChannelData(0))); };
-        this.sourceNode.connect(processor);
-        processor.connect(this.audioContext.destination);
-    },
-    getFrequencyData() {
-        if (!this.analyser) return new Uint8Array(128);
-        const data = new Uint8Array(this.analyser.frequencyBinCount);
-        this.analyser.getByteFrequencyData(data);
-        return data;
-    },
-    getAudioChunks() { const c = this.audioChunks; this.audioChunks = []; return c; },
-    async stop() {
-        // 1. Stop audio processing
-        if (this.processorNode) { this.processorNode.onaudioprocess = null; try { this.processorNode.disconnect(); } catch(e) {} this.processorNode = null; }
-        if (this.sourceNode) { try { this.sourceNode.disconnect(); } catch(e) {} this.sourceNode = null; }
-        if (this.analyser) { try { this.analyser.disconnect(); } catch(e) {} this.analyser = null; }
-        if (this.audioContext) { try { await this.audioContext.close(); } catch(e) {} this.audioContext = null; }
-        // 2. Stop all tracks and null stream
-        if (this.stream) { this.stream.getTracks().forEach(t => { try { t.stop(); } catch(e) {} }); this.stream = null; }
-        this.audioChunks = [];
-        // 3. Reset video element completely
-        const video = document.getElementById('videoPlayer');
-        video.pause();
-        video.onloadedmetadata = null; video.onplay = null;
-        video.srcObject = null;
-        try { video.load(); } catch(e) {}
-        video.classList.remove('active');
-        document.getElementById('placeholder').classList.remove('hidden');
-    }
-};
 
-const Subtitles = {
-    container: null,
-    init() { this.container = document.getElementById('subtitleOverlay'); },
-    show(text) {
-        if (!this.container || !text) return;
-        const span = document.createElement('div');
-        span.className = 'subtitle-line';
-        span.textContent = this.escapeHtml(text);
-        this.container.appendChild(span);
-        while (this.container.children.length > 4) this.container.removeChild(this.container.firstChild);
-        setTimeout(() => {
-            if (span.parentNode) { span.style.transition = 'opacity 0.5s'; span.style.opacity = '0'; setTimeout(() => span.remove(), 500); }
-        }, 6000);
-    },
-    clear() { if (this.container) this.container.innerHTML = ''; },
-    escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
-};
+        // === Update Stats ===
+        function updateStats() {
+            document.getElementById('statChunks').textContent = stats.chunks;
+            document.getElementById('statSuccess').textContent = stats.success;
+            document.getElementById('statFailed').textContent = stats.failed;
+            if (stats.chunks > 0) {
+                statsBar.style.display = 'flex';
+            }
+        }
 
-function encodeWAV(samples, sampleRate) {
-    const buf = new ArrayBuffer(44 + samples.length * 2);
-    const v = new DataView(buf);
-    const ws = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
-    ws(0, 'RIFF'); v.setUint32(4, 36 + samples.length * 2, true);
-    ws(8, 'WAVE'); ws(12, 'fmt ');
-    v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
-    v.setUint32(24, sampleRate, true); v.setUint32(28, sampleRate * 2, true);
-    v.setUint16(32, 2, true); v.setUint16(34, 16, true);
-    ws(36, 'data'); v.setUint32(40, samples.length * 2, true);
-    let off = 44;
-    for (let i = 0; i < samples.length; i++) { const s = Math.max(-1, Math.min(1, samples[i])); v.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true); off += 2; }
-    return new Blob([buf], { type: 'audio/wav' });
-}
+        // === Add Result Card ===
+        function addResult(original, translation) {
+            noResults.style.display = 'none';
+            const card = document.createElement('div');
+            card.className = 'result-card';
+            card.innerHTML = `
+                <div class="original">${escapeHtml(original)}</div>
+                <div class="translation">${escapeHtml(translation)}</div>
+            `;
+            resultsContainer.appendChild(card);
+            // Scroll to bottom
+            resultsContainer.scrollTop = resultsContainer.scrollHeight;
+        }
 
-async function sendToBackend(audioData, sourceLang, targetLang, externalSignal) {
-    const totalLen = audioData.reduce((s, c) => s + c.length, 0);
-    const merged = new Float32Array(totalLen);
-    let off = 0;
-    for (const c of audioData) { merged.set(c, off); off += c.length; }
-    const wavBlob = encodeWAV(merged, 16000);
-    const fd = new FormData();
-    fd.append('file', wavBlob, 'audio.wav');
-    fd.append('source_lang', sourceLang);
-    fd.append('target_lang', targetLang);
-    // Timeout controller
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
-    // Link to external signal (for cancellation when stop is pressed)
-    if (externalSignal) externalSignal.addEventListener('abort', () => controller.abort(), { once: true });
-    try {
-        const resp = await fetch(API_URL + '/api/process', { method: 'POST', body: fd, signal: controller.signal });
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        return resp.json();
-    } finally { clearTimeout(timeoutId); }
-}
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
 
-const App = {
-    state: 'idle', intervalId: null, animFrameId: null, pendingAbort: null, errorCount: 0,
-    async init() {
-        Subtitles.init();
-        document.getElementById('captureBtn').addEventListener('click', () => this.toggleCapture());
-        document.getElementById('swapBtn').addEventListener('click', () => this.swapLanguages());
-        document.getElementById('mobileMenuBtn').addEventListener('click', () => { document.getElementById('navLinks').classList.toggle('open'); });
-    },
-    async toggleCapture() {
-        if (this.state === 'idle') await this.start();
-        else if (this.state === 'capturing') await this.stop();
-    },
-    async start() {
-        const btn = document.getElementById('captureBtn');
-        btn.disabled = true;
-        this.setStatus('اختر التبويب يلي فيه الفيديو...', 'loading');
-        const success = await Capture.start();
-        if (!success) { this.setStatus('لم يتم اختيار تبويب', 'error'); this.setState('idle'); btn.disabled = false; return; }
-        this.setState('capturing'); btn.disabled = false; btn.classList.add('active');
-        btn.querySelector('.capture-text').textContent = 'إيقاف الالتقاط';
-        btn.querySelector('.capture-icon').textContent = '■';
-        this.errorCount = 0;
-        this.startTranscriptionLoop();
-        this.startVisualization();
-    },
-    async stop() {
-        this.setState('cooldown');
-        if (this.pendingAbort) { this.pendingAbort.abort(); this.pendingAbort = null; }
-        await Capture.stop();
-        Subtitles.clear();
-        if (this.intervalId) { clearInterval(this.intervalId); this.intervalId = null; }
-        if (this.animFrameId) { cancelAnimationFrame(this.animFrameId); this.animFrameId = null; }
-        const btn = document.getElementById('captureBtn');
-        btn.classList.remove('active');
-        btn.querySelector('.capture-text').textContent = 'انتظر...';
-        btn.disabled = true;
-        document.getElementById('visualizer').classList.remove('active');
-        this.setStatus('تم الإيقاف', 'ready');
-        setTimeout(() => {
-            btn.querySelector('.capture-text').textContent = 'التقط التبويب';
-            btn.querySelector('.capture-icon').textContent = '◯';
-            btn.disabled = false;
-            if (App.state === 'cooldown') App.setState('idle');
-        }, 2000);
-    },
-    async onCaptureEnded() { await this.stop(); },
-    startTranscriptionLoop() {
-        this.intervalId = setInterval(async () => {
-            const chunks = Capture.getAudioChunks();
-            if (!chunks.length) return;
-            const totalSamples = chunks.reduce((s, c) => s + c.length, 0);
-            let rms = 0;
-            for (const chunk of chunks) { for (let i = 0; i < chunk.length; i++) rms += chunk[i] * chunk[i]; }
-            rms = Math.sqrt(rms / totalSamples);
-            if (rms < 0.01) return;
-            // Cancel previous pending request to avoid pile-up
-            if (this.pendingAbort) this.pendingAbort.abort();
-            this.pendingAbort = new AbortController();
-            const currentAbort = this.pendingAbort;
-            this.setStatus('جاري النسخ والترجمة...', 'capturing');
+        // === Read audio file as base64 ===
+        function readFileAsBase64(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        // === Process Audio Chunk ===
+        async function processChunk(audioBlob) {
+            if (!audioBlob || audioBlob.size < 500) return;
+
+            stats.chunks++;
+            updateStats();
+            setStatus('جاري النسخ والترجمة...', 'processing');
+
             try {
-                const result = await sendToBackend(
-                    chunks,
-                    document.getElementById('sourceLang').value,
-                    document.getElementById('targetLang').value,
-                    currentAbort.signal
-                );
-                if (currentAbort.signal.aborted) return;
-                if (result.translation) {
-                    Subtitles.show(result.translation);
-                    this.errorCount = 0;
-                } else if (result.transcription) {
-                    // Transcription exists but translation failed - show original
-                    Subtitles.show(result.transcription);
-                    this.errorCount = 0;
-                } else {
-                    this.errorCount++;
-                    if (this.errorCount >= 3) {
-                        this.setStatus('لا يتم اكتشاف كلام واضح', 'error');
-                    }
+                const base64Audio = await readFileAsBase64(audioBlob);
+
+                abortController = new AbortController();
+                const timeoutId = setTimeout(() => abortController.abort(), 30000);
+
+                const response = await fetch(`${API_URL}/transcribe`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        audio_base64: base64Audio,
+                        source_lang: sourceLangSelect.value,
+                        target_lang: targetLangSelect.value,
+                    }),
+                    signal: abortController.signal,
+                });
+
+                clearTimeout(timeoutId);
+
+                const data = await response.json();
+
+                if (data.error) {
+                    console.log('⚠️', data.error);
+                    setStatus(data.error, 'error');
+                    // Reset to capturing status after 2 seconds
+                    setTimeout(() => {
+                        if (isCapturing) setStatus('جاري الالتقاط... (انتظر الكلام)', 'capturing');
+                    }, 2000);
+                    return;
+                }
+
+                if (data.translation && data.text) {
+                    addResult(data.text, data.translation);
+                    stats.success++;
+                    setStatus('تمت الترجمة ✓', 'success');
+                    setTimeout(() => {
+                        if (isCapturing) setStatus('جاري الالتقاط... (انتظر الكلام)', 'capturing');
+                    }, 1500);
                 }
             } catch (err) {
-                if (err.name === 'AbortError') return;
-                console.error('Process error:', err);
-                this.errorCount++;
-                if (this.errorCount >= 2) {
-                    this.setStatus('خطأ في الاتصال بالسيرفر', 'error');
+                if (err.name === 'AbortError') {
+                    console.log('⏱️ طلب ملغى (تايم أوت أو طلب جديد)');
                 } else {
-                    this.setStatus('جاري إعادة المحاولة...', 'loading');
+                    console.error('❌ خطأ:', err);
+                    stats.failed++;
+                    setStatus('خطأ في الاتصال بالسيرفر', 'error');
                 }
-                // Reset error count after 10 seconds
-                setTimeout(() => { if (this.errorCount > 0) this.errorCount = Math.max(0, this.errorCount - 1); }, 10000);
             }
-        }, 2000);
-    },
-    startVisualization() {
-        const viz = document.getElementById('visualizer');
-        const bars = viz.querySelectorAll('.viz-bar');
-        viz.classList.add('active');
-        const update = () => {
-            const data = Capture.getFrequencyData();
-            const step = Math.floor(data.length / bars.length);
-            bars.forEach((bar, i) => { const val = data[i * step] || 0; bar.style.height = Math.max(2, (val / 255) * 40) + 'px'; });
-            this.animFrameId = requestAnimationFrame(update);
-        };
-        update();
-    },
-    swapLanguages() {
-        const src = document.getElementById('sourceLang'); const tgt = document.getElementById('targetLang');
-        const tmp = src.value; src.value = tgt.value; tgt.value = tmp;
-    },
-    setState(state) { this.state = state; document.getElementById('statusIndicator').className = 'status-indicator ' + state; },
-    setStatus(text, state) { document.getElementById('statusText').textContent = text; if (state) this.setState(state); }
-};
+            updateStats();
+        }
 
-document.addEventListener('DOMContentLoaded', () => App.init());
+        // === Start Capture ===
+        async function startCapture() {
+            if (cooldown) {
+                setStatus('انتظر قليلاً قبل المحاولة مجدداً...', 'error');
+                return;
+            }
+
+            try {
+                setStatus('اختر التبويب اللي فيه الفيديو...', 'processing');
+
+                // Request tab capture with audio
+                mediaStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: true,  // لازم video=true عشان getDisplayMedia يشتغل
+                    audio: true,
+                    preferCurrentTab: false,
+                });
+
+                // Check if audio track exists
+                const audioTracks = mediaStream.getAudioTracks();
+                if (audioTracks.length === 0) {
+                    setStatus('⚠️ لم يتم التقاط صوت! تأكد من مشاركة الصوت عند الاختيار.', 'error');
+                    stopCapture();
+                    return;
+                }
+
+                isCapturing = true;
+                btnCapture.disabled = true;
+                btnStop.disabled = false;
+                statsBar.style.display = 'flex';
+
+                // Create AudioContext with target sample rate
+                audioContext = new (window.AudioContext || window.webkitAudioContext)({
+                    sampleRate: 16000,  // Whisper يعمل بأفضل شكل مع 16kHz
+                });
+
+                // Connect audio track
+                sourceNode = audioContext.createMediaStreamSource(
+                    new MediaStream(audioTracks)
+                );
+
+                // Create ScriptProcessor for buffering
+                const bufferSize = 4096;
+                processorNode = audioContext.createScriptProcessor(bufferSize, 1, 1);
+                audioChunks = [];
+
+                processorNode.onaudioprocess = (e) => {
+                    if (!isCapturing) return;
+                    const channelData = e.inputBuffer.getChannelData(0);
+                    audioChunks.push(new Float32Array(channelData));
+                };
+
+                sourceNode.connect(processorNode);
+                processorNode.connect(audioContext.destination);
+
+                // Start chunk timer based on user setting
+                const chunkSeconds = parseInt(chunkDurationSelect.value);
+                startChunkTimer(chunkSeconds);
+
+                setStatus('جاري الالتقاط... (انتظر الكلام)', 'capturing');
+
+                // Listen for stream end (user clicks stop sharing)
+                mediaStream.getVideoTracks()[0].addEventListener('ended', () => {
+                    if (isCapturing) stopCapture();
+                });
+
+            } catch (err) {
+                console.error('Capture error:', err);
+                if (err.name === 'NotAllowedError') {
+                    setStatus('تم إلغاء اختيار التبويب', 'error');
+                } else {
+                    setStatus('خطأ في الالتقاط: ' + err.message, 'error');
+                }
+                isCapturing = false;
+                btnCapture.disabled = false;
+            }
+        }
+
+        // === Chunk Timer ===
+        function startChunkTimer(seconds) {
+            clearInterval(chunkTimer);
+            chunkTimer = setInterval(async () => {
+                if (!isCapturing || audioChunks.length === 0) return;
+
+                // Merge all buffered chunks into one WAV
+                const wavBlob = createWavFromChunks(audioChunks);
+                audioChunks = []; // Reset buffer
+
+                if (wavBlob && wavBlob.size > 500) {
+                    processChunk(wavBlob);
+                }
+            }, seconds * 1000);
+        }
+
+        // === Create WAV from Float32Array chunks ===
+        function createWavFromChunks(chunks) {
+            if (chunks.length === 0) return null;
+
+            const sampleRate = audioContext.sampleRate;
+            const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+
+            // Create single merged buffer
+            const merged = new Float32Array(totalLength);
+            let offset = 0;
+            for (const chunk of chunks) {
+                merged.set(chunk, offset);
+                offset += chunk.length;
+            }
+
+            // Convert Float32 to Int16
+            const int16Data = new Int16Array(merged.length);
+            for (let i = 0; i < merged.length; i++) {
+                const s = Math.max(-1, Math.min(1, merged[i]));
+                int16Data[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            }
+
+            // Create WAV file
+            const wavBuffer = new ArrayBuffer(44 + int16Data.length * 2);
+            const view = new DataView(wavBuffer);
+
+            // WAV header
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + int16Data.length * 2, true);
+            writeString(view, 8, 'WAVE');
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true); // PCM
+            view.setUint16(22, 1, true); // Mono
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true); // Byte rate
+            view.setUint16(32, 2, true); // Block align
+            view.setUint16(34, 16, true); // Bits per sample
+            writeString(view, 36, 'data');
+            view.setUint32(40, int16Data.length * 2, true);
+
+            // Write audio data
+            const dataOffset = 44;
+            for (let i = 0; i < int16Data.length; i++) {
+                view.setInt16(dataOffset + i * 2, int16Data[i], true);
+            }
+
+            return new Blob([wavBuffer], { type: 'audio/wav' });
+        }
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+
+        // === Stop Capture ===
+        function stopCapture() {
+            isCapturing = false;
+
+            // Cancel any pending request
+            if (abortController) {
+                abortController.abort();
+                abortController = null;
+            }
+
+            // Stop chunk timer
+            clearInterval(chunkTimer);
+            chunkTimer = null;
+
+            // Process remaining audio
+            if (audioChunks.length > 0) {
+                const wavBlob = createWavFromChunks(audioChunks);
+                audioChunks = [];
+                if (wavBlob) processChunk(wavBlob);
+            }
+
+            // Cleanup audio nodes
+            if (processorNode) {
+                processorNode.disconnect();
+                processorNode = null;
+            }
+            if (sourceNode) {
+                sourceNode.disconnect();
+                sourceNode = null;
+            }
+            if (audioContext) {
+                audioContext.close().catch(() => {});
+                audioContext = null;
+            }
+
+            // Stop media stream
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+
+            // Cooldown before re-capture
+            cooldown = true;
+            btnCapture.disabled = true;
+            btnStop.disabled = true;
+            setStatus('انتظر 3 ثواني قبل إعادة الالتقاط...', 'idle');
+
+            setTimeout(() => {
+                cooldown = false;
+                btnCapture.disabled = false;
+                setStatus('جاهز للاستخدام');
+            }, 3000);
+        }
+
+        // === Clear Results ===
+        function clearResults() {
+            resultsContainer.innerHTML = `
+                <div class="no-results" id="noResults">
+                    <div class="icon">🎤</div>
+                    <p>الترجمات ستظهر هنا</p>
+                </div>
+            `;
+            stats = { chunks: 0, success: 0, failed: 0 };
+            updateStats();
+            statsBar.style.display = 'none';
+        }
+
+        // === Event Listeners ===
+        btnCapture.addEventListener('click', startCapture);
+        btnStop.addEventListener('click', stopCapture);
+        btnClear.addEventListener('click', clearResults);
+
+        // === Check API health on load ===
+        fetch(`${API_URL}/health`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.groq_ready) {
+                    setStatus(`جاهز — النموذج: ${data.model} ✓`, 'success');
+                } else {
+                    setStatus('⚠️ السيرفر شغال لكن GROQ_API_KEY غير موجود', 'error');
+                }
+            })
+            .catch(() => {
+                setStatus('⚠️ لم يتم الاتصال بالسيرفر', 'error');
+            });
     </script>
 </body>
 </html>
