@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VidLingo - مترجم الفيديو</title>
+    <title>VidLingo - مترجم الفيديو والنصوص</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -20,14 +20,44 @@
         }
         header {
             text-align: center;
-            padding: 20px 0 12px;
+            padding: 20px 0 8px;
         }
         header h1 {
             font-size: 2em;
             color: #7c3aed;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
         header p { color: #888; font-size: 0.95em; }
+
+        /* Mode Tabs */
+        .mode-tabs {
+            display: flex;
+            gap: 0;
+            justify-content: center;
+            margin: 14px auto 10px;
+            background: #1a1a2e;
+            border-radius: 14px;
+            padding: 5px;
+            width: fit-content;
+        }
+        .mode-tab {
+            padding: 10px 28px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+            background: transparent;
+            color: #888;
+        }
+        .mode-tab.active {
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+            color: white;
+            box-shadow: 0 2px 12px rgba(124,58,237,0.4);
+        }
+        .mode-tab:hover:not(.active) { color: #bbb; }
 
         /* Settings */
         .settings {
@@ -35,7 +65,7 @@
             gap: 14px;
             justify-content: center;
             flex-wrap: wrap;
-            margin: 12px 0;
+            margin: 10px 0;
             padding: 14px;
             background: #1a1a2e;
             border-radius: 12px;
@@ -55,6 +85,7 @@
             font-family: inherit;
             font-size: 0.9em;
         }
+        .hidden { display: none !important; }
 
         /* Controls */
         .controls {
@@ -62,7 +93,7 @@
             gap: 12px;
             justify-content: center;
             flex-wrap: wrap;
-            margin: 14px 0;
+            margin: 12px 0;
         }
         .btn {
             padding: 12px 28px;
@@ -116,32 +147,70 @@
             50% { opacity: 0.5; transform: scale(1.3); }
         }
 
-        /* Main Layout: Video + Translations side by side */
+        /* Info box */
+        .info-box {
+            background: rgba(124,58,237,0.1);
+            border: 1px solid rgba(124,58,237,0.3);
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin: 10px 0;
+            font-size: 0.9em;
+            line-height: 1.7;
+            color: #bbb;
+            text-align: center;
+        }
+        .info-box strong { color: #a78bfa; }
+
+        /* Progress bar for OCR */
+        .ocr-progress {
+            width: 100%;
+            height: 4px;
+            background: #252540;
+            border-radius: 2px;
+            margin: 8px 0;
+            overflow: hidden;
+            display: none;
+        }
+        .ocr-progress.active { display: block; }
+        .ocr-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #7c3aed, #a78bfa);
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Main Layout */
         .main-layout {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 16px;
-            margin-top: 14px;
+            margin-top: 12px;
         }
         @media (max-width: 768px) {
             .main-layout { grid-template-columns: 1fr; }
         }
 
-        /* Video Section */
-        .video-section {
+        /* Left Panel (Video / Screenshot) */
+        .media-section {
             background: #1a1a2e;
             border-radius: 14px;
             overflow: hidden;
             position: relative;
         }
-        .video-section video {
+        .media-section video {
             width: 100%;
             aspect-ratio: 16/9;
             object-fit: contain;
             background: #000;
             display: block;
         }
-        .video-placeholder {
+        .media-section .screenshot-img {
+            width: 100%;
+            display: block;
+            border-radius: 14px;
+        }
+        .media-placeholder {
             width: 100%;
             aspect-ratio: 16/9;
             display: flex;
@@ -152,7 +221,7 @@
             font-size: 1.1em;
             background: #111;
         }
-        .video-placeholder .icon { font-size: 3em; margin-bottom: 10px; }
+        .media-placeholder .icon { font-size: 3em; margin-bottom: 10px; }
         .rec-badge {
             position: absolute;
             top: 12px;
@@ -206,6 +275,9 @@
             border-right: 3px solid #7c3aed;
             animation: fadeIn 0.3s ease;
         }
+        .result-card.text-card {
+            border-right-color: #f59e0b;
+        }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
@@ -213,15 +285,32 @@
         .result-card .original {
             color: #9ca3af;
             font-size: 0.85em;
-            margin-bottom: 4px;
-            direction: ltr;
-            text-align: left;
+            margin-bottom: 6px;
+            line-height: 1.5;
         }
         .result-card .translation {
             color: #e0e0e0;
             font-size: 1.05em;
-            line-height: 1.6;
+            line-height: 1.7;
         }
+        .result-card .thumb {
+            width: 100%;
+            max-height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+        .result-card .thumb:hover { opacity: 1; }
+        .result-card .lang-label {
+            font-size: 0.75em;
+            color: #7c3aed;
+            margin-bottom: 2px;
+            font-weight: 600;
+        }
+        .result-card.text-card .lang-label { color: #f59e0b; }
         .no-results {
             text-align: center;
             padding: 40px 16px;
@@ -240,7 +329,7 @@
             gap: 20px;
             justify-content: center;
             flex-wrap: wrap;
-            margin: 12px 0;
+            margin: 10px 0;
             padding: 10px;
             background: #1a1a2e;
             border-radius: 10px;
@@ -248,30 +337,23 @@
         .stat { text-align: center; }
         .stat .value { font-size: 1.3em; font-weight: 700; color: #7c3aed; }
         .stat .label { font-size: 0.8em; color: #888; }
-
-        /* Info box */
-        .info-box {
-            background: rgba(124,58,237,0.1);
-            border: 1px solid rgba(124,58,237,0.3);
-            border-radius: 10px;
-            padding: 14px;
-            margin: 12px 0;
-            font-size: 0.9em;
-            line-height: 1.7;
-            color: #bbb;
-        }
-        .info-box strong { color: #a78bfa; }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>VidLingo</h1>
-            <p>مترجم الفيديو بالذكاء الاصطناعي — Whisper large-v3-turbo</p>
+            <p id="headerSubtitle">مترجم الفيديو والنصوص بالذكاء الاصطناعي</p>
         </header>
 
-        <div class="info-box">
-            <strong>كيف تستعمل:</strong> اضغط "التقاط التبويب" → اختر التبويب اللي فيه الفيديو → شوف الفيديو والترجمة مع بعض!
+        <!-- Mode Tabs -->
+        <div class="mode-tabs">
+            <button class="mode-tab active" data-mode="audio" onclick="switchMode('audio')">🎙️ ترجمة صوت / فيديو</button>
+            <button class="mode-tab" data-mode="text" onclick="switchMode('text')">📝 ترجمة نصوص</button>
+        </div>
+
+        <div class="info-box" id="infoBox">
+            <strong>كيف تستعمل:</strong> اضغط "التقاط التبويب" ← اختر التبويب اللي فيه الفيديو ← شوف الفيديو والترجمة مع بعض!
         </div>
 
         <div class="settings">
@@ -290,6 +372,9 @@
                     <option value="zh">中文</option>
                     <option value="hi">हिन्दी</option>
                     <option value="ur">اردو</option>
+                    <option value="ru">Русский</option>
+                    <option value="pt">Português</option>
+                    <option value="it">Italiano</option>
                 </select>
             </div>
             <div class="setting-group">
@@ -298,9 +383,18 @@
                     <option value="ar">العربية</option>
                     <option value="en">English</option>
                     <option value="fr">Français</option>
+                    <option value="es">Español</option>
+                    <option value="tr">Türkçe</option>
+                    <option value="de">Deutsch</option>
+                    <option value="ru">Русский</option>
+                    <option value="zh">中文</option>
+                    <option value="ja">日本語</option>
+                    <option value="ko">한국어</option>
+                    <option value="hi">हिन्दी</option>
+                    <option value="ur">اردو</option>
                 </select>
             </div>
-            <div class="setting-group">
+            <div class="setting-group" id="chunkSetting">
                 <label>مدة القطعة:</label>
                 <select id="chunkDuration">
                     <option value="5">5 ثواني</option>
@@ -317,12 +411,16 @@
             <button id="btnClear" class="btn btn-clear">🗑️ مسح</button>
         </div>
 
+        <div class="ocr-progress" id="ocrProgress">
+            <div class="ocr-progress-bar" id="ocrProgressBar"></div>
+        </div>
+
         <div id="statusBar" class="status-bar idle">جاهز للاستخدام</div>
 
         <div class="stats" id="statsBar" style="display:none;">
             <div class="stat">
                 <div class="value" id="statChunks">0</div>
-                <div class="label">قطع</div>
+                <div class="label">عمليات</div>
             </div>
             <div class="stat">
                 <div class="value" id="statSuccess">0</div>
@@ -334,13 +432,14 @@
             </div>
         </div>
 
-        <!-- Video + Translations side by side -->
+        <!-- Video / Screenshot + Translations side by side -->
         <div class="main-layout">
-            <div class="video-section">
+            <div class="media-section">
                 <video id="videoPlayer" autoplay muted playsinline></video>
-                <div id="videoPlaceholder" class="video-placeholder">
+                <img id="screenshotPreview" class="screenshot-img" style="display:none" alt="لقطة الشاشة">
+                <div id="mediaPlaceholder" class="media-placeholder">
                     <div class="icon">🎬</div>
-                    <p>الفيديو هيك بيظهر هنا</p>
+                    <p id="placeholderText">الفيديو هيك بيظهر هنا</p>
                 </div>
                 <div id="recBadge" class="rec-badge">
                     <span class="rec-dot"></span> REC
@@ -361,8 +460,9 @@
     <script>
         const API_URL = 'https://video-downloader-1-mthm.onrender.com';
 
+        // ===== State =====
+        let currentMode = 'audio'; // 'audio' or 'text'
         let mediaStream = null;
-        let mediaRecorder = null;
         let audioContext = null;
         let processorNode = null;
         let sourceNode = null;
@@ -372,7 +472,24 @@
         let audioChunks = [];
         let stats = { chunks: 0, success: 0, failed: 0 };
         let cooldown = false;
+        let ocrWorker = null;
+        let tesseractLoaded = false;
+        let textCaptureBusy = false;
 
+        // ===== RTL Languages =====
+        const RTL_LANGS = ['ar', 'he', 'fa', 'ur', 'yi', 'ku', 'ckb'];
+        function isRTLLang(langCode) {
+            return RTL_LANGS.some(l => langCode.startsWith(l));
+        }
+
+        // ===== Tesseract Language Map =====
+        const TESS_LANG_MAP = {
+            'auto': 'eng', 'en': 'eng', 'ar': 'ara', 'fr': 'fra', 'es': 'spa',
+            'tr': 'tur', 'de': 'deu', 'ja': 'jpn', 'ko': 'kor', 'zh': 'chi_sim',
+            'hi': 'hin', 'ur': 'urd', 'ru': 'rus', 'pt': 'por', 'it': 'ita'
+        };
+
+        // ===== DOM References =====
         const btnCapture = document.getElementById('btnCapture');
         const btnStop = document.getElementById('btnStop');
         const btnClear = document.getElementById('btnClear');
@@ -381,12 +498,19 @@
         const noResults = document.getElementById('noResults');
         const statsBar = document.getElementById('statsBar');
         const videoPlayer = document.getElementById('videoPlayer');
-        const videoPlaceholder = document.getElementById('videoPlaceholder');
+        const screenshotPreview = document.getElementById('screenshotPreview');
+        const mediaPlaceholder = document.getElementById('mediaPlaceholder');
+        const placeholderText = document.getElementById('placeholderText');
         const recBadge = document.getElementById('recBadge');
         const sourceLangSelect = document.getElementById('sourceLang');
         const targetLangSelect = document.getElementById('targetLang');
         const chunkDurationSelect = document.getElementById('chunkDuration');
+        const chunkSetting = document.getElementById('chunkSetting');
+        const infoBox = document.getElementById('infoBox');
+        const ocrProgress = document.getElementById('ocrProgress');
+        const ocrProgressBar = document.getElementById('ocrProgressBar');
 
+        // ===== Utility Functions =====
         function setStatus(text, type = 'idle') {
             statusBar.className = 'status-bar ' + type;
             let p = '';
@@ -403,15 +527,6 @@
             if (stats.chunks > 0) statsBar.style.display = 'flex';
         }
 
-        function addResult(original, translation) {
-            noResults.style.display = 'none';
-            const card = document.createElement('div');
-            card.className = 'result-card';
-            card.innerHTML = '<div class="original">' + escapeHtml(original) + '</div><div class="translation">' + escapeHtml(translation) + '</div>';
-            resultsContainer.appendChild(card);
-            resultsContainer.scrollTop = resultsContainer.scrollHeight;
-        }
-
         function escapeHtml(text) {
             const d = document.createElement('div');
             d.textContent = text; return d.innerHTML;
@@ -426,6 +541,105 @@
             });
         }
 
+        function addResult(original, translation, isTextMode = false) {
+            noResults.style.display = 'none';
+            const card = document.createElement('div');
+            card.className = 'result-card' + (isTextMode ? ' text-card' : '');
+
+            const origDir = isTextMode
+                ? (isRTLLang(sourceLangSelect.value) ? 'rtl' : 'ltr')
+                : 'ltr';
+            const transDir = isRTLLang(targetLangSelect.value) ? 'rtl' : 'ltr';
+
+            card.innerHTML =
+                '<div class="lang-label">المصدر</div>' +
+                '<div class="original" dir="' + origDir + '" style="text-align:' + (origDir === 'rtl' ? 'right' : 'left') + '">' + escapeHtml(original) + '</div>' +
+                '<div class="lang-label" style="margin-top:8px;">الترجمة</div>' +
+                '<div class="translation" dir="' + transDir + '" style="text-align:' + (transDir === 'rtl' ? 'right' : 'left') + '">' + escapeHtml(translation) + '</div>';
+
+            resultsContainer.appendChild(card);
+            resultsContainer.scrollTop = resultsContainer.scrollHeight;
+        }
+
+        function addTextResult(original, translation, thumbUrl) {
+            noResults.style.display = 'none';
+            const card = document.createElement('div');
+            card.className = 'result-card text-card';
+
+            const origDir = isRTLLang(sourceLangSelect.value) ? 'rtl' : 'ltr';
+            const transDir = isRTLLang(targetLangSelect.value) ? 'rtl' : 'ltr';
+
+            let html = '';
+            if (thumbUrl) {
+                html += '<img class="thumb" src="' + thumbUrl + '" alt="لقطة" onclick="showScreenshotFull(this.src)">';
+            }
+            html +=
+                '<div class="lang-label">المصدر</div>' +
+                '<div class="original" dir="' + origDir + '" style="text-align:' + (origDir === 'rtl' ? 'right' : 'left') + '">' + escapeHtml(original) + '</div>' +
+                '<div class="lang-label" style="margin-top:8px;">الترجمة</div>' +
+                '<div class="translation" dir="' + transDir + '" style="text-align:' + (transDir === 'rtl' ? 'right' : 'left') + '">' + escapeHtml(translation) + '</div>';
+
+            card.innerHTML = html;
+            resultsContainer.appendChild(card);
+            resultsContainer.scrollTop = resultsContainer.scrollHeight;
+        }
+
+        function showScreenshotFull(src) {
+            screenshotPreview.src = src;
+            screenshotPreview.style.display = 'block';
+            videoPlayer.style.display = 'none';
+            mediaPlaceholder.style.display = 'none';
+        }
+
+        // ===== Mode Switching =====
+        function switchMode(mode) {
+            if (isCapturing) stopCapture();
+            if (textCaptureBusy) return;
+
+            currentMode = mode;
+
+            // Update tabs
+            document.querySelectorAll('.mode-tab').forEach(t => {
+                t.classList.toggle('active', t.dataset.mode === mode);
+            });
+
+            if (mode === 'audio') {
+                // Audio mode UI
+                btnCapture.innerHTML = '🎙️ التقاط التبويب';
+                btnStop.classList.remove('hidden');
+                chunkSetting.classList.remove('hidden');
+                infoBox.innerHTML = '<strong>كيف تستعمل:</strong> اضغط "التقاط التبويب" ← اختر التبويب اللي فيه الفيديو ← شوف الفيديو والترجمة مع بعض!';
+                placeholderText.textContent = 'الفيديو هيك بيظهر هنا';
+                mediaPlaceholder.querySelector('.icon').textContent = '🎬';
+                // Reset left panel
+                screenshotPreview.style.display = 'none';
+                videoPlayer.style.display = 'block';
+                if (!videoPlayer.srcObject) {
+                    mediaPlaceholder.style.display = 'flex';
+                    videoPlayer.style.display = 'none';
+                }
+            } else {
+                // Text mode UI
+                btnCapture.innerHTML = '📷 التقاط النصوص';
+                btnStop.classList.add('hidden');
+                chunkSetting.classList.add('hidden');
+                infoBox.innerHTML = '<strong>كيف تستعمل:</strong> اضغط "التقاط النصوص" ← اختر التبويب اللي فيه نصوص ← هيستخرج النص ويترجمه مع تبديل اتجاه الكتابة تلقائياً!';
+                placeholderText.textContent = 'لقطة الشاشة هيك بيظهر هنا';
+                mediaPlaceholder.querySelector('.icon').textContent = '📝';
+                // Reset left panel
+                if (isCapturing) stopCapture();
+                videoPlayer.style.display = 'none';
+                videoPlayer.srcObject = null;
+                if (!screenshotPreview.src || screenshotPreview.style.display === 'none') {
+                    mediaPlaceholder.style.display = 'flex';
+                }
+                recBadge.classList.remove('active');
+            }
+
+            setStatus('جاهز للاستخدام');
+        }
+
+        // ===== AUDIO MODE (unchanged) =====
         async function processChunk(audioBlob) {
             if (!audioBlob || audioBlob.size < 500) return;
             stats.chunks++;
@@ -453,7 +667,7 @@
                     return;
                 }
                 if (data.translation && data.text) {
-                    addResult(data.text, data.translation);
+                    addResult(data.text, data.translation, false);
                     stats.success++;
                     setStatus('تمت الترجمة ✓', 'success');
                     setTimeout(() => { if (isCapturing) setStatus('جاري الالتقاط...', 'capturing'); }, 1500);
@@ -467,32 +681,32 @@
             updateStats();
         }
 
-        async function startCapture() {
+        async function startAudioCapture() {
             if (cooldown) { setStatus('انتظر قليلاً...', 'error'); return; }
             try {
                 setStatus('اختر التبويب اللي فيه الفيديو...', 'processing');
                 mediaStream = await navigator.mediaDevices.getDisplayMedia({
-                    video: true,
-                    audio: true,
+                    video: true, audio: true,
                 });
                 const audioTracks = mediaStream.getAudioTracks();
                 if (audioTracks.length === 0) {
                     setStatus('لم يتم التقاط صوت! شارك الصوت.', 'error');
-                    stopCapture();
-                    return;
+                    stopCapture(); return;
                 }
 
                 isCapturing = true;
                 btnCapture.disabled = true;
                 btnStop.disabled = false;
 
-                // === Show video ===
+                // Show video
+                videoPlayer.style.display = 'block';
+                screenshotPreview.style.display = 'none';
+                mediaPlaceholder.style.display = 'none';
                 videoPlayer.srcObject = mediaStream;
                 videoPlayer.muted = false;
-                videoPlaceholder.style.display = 'none';
                 recBadge.classList.add('active');
 
-                // === Audio processing for transcription ===
+                // Audio processing
                 audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
                 sourceNode = audioContext.createMediaStreamSource(new MediaStream(audioTracks));
                 processorNode = audioContext.createScriptProcessor(4096, 1, 1);
@@ -574,7 +788,8 @@
             if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
 
             videoPlayer.srcObject = null;
-            videoPlaceholder.style.display = 'flex';
+            mediaPlaceholder.style.display = 'flex';
+            if (currentMode === 'audio') videoPlayer.style.display = 'none';
             recBadge.classList.remove('active');
 
             cooldown = true;
@@ -584,17 +799,195 @@
             setTimeout(() => { cooldown = false; btnCapture.disabled = false; setStatus('جاهز للاستخدام'); }, 3000);
         }
 
+        // ===== TEXT / OCR MODE =====
+        async function loadTesseract() {
+            if (tesseractLoaded) return;
+            setStatus('جاري تحميل محرك OCR (أول مرة فقط)...', 'processing');
+            await new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+                script.onload = resolve;
+                script.onerror = () => reject(new Error('فشل تحميل Tesseract.js'));
+                document.head.appendChild(script);
+            });
+            tesseractLoaded = true;
+        }
+
+        async function initOCRWorker(lang) {
+            const tessLang = TESS_LANG_MAP[lang] || 'eng';
+            if (ocrWorker) {
+                try { await ocrWorker.terminate(); } catch(e) {}
+                ocrWorker = null;
+            }
+            ocrWorker = await Tesseract.createWorker(tessLang, 1, {
+                logger: (m) => {
+                    if (m.status === 'recognizing text') {
+                        const pct = Math.round(m.progress * 100);
+                        ocrProgressBar.style.width = pct + '%';
+                        setStatus('جاري استخراج النص... ' + pct + '%', 'processing');
+                    } else if (m.status === 'loading language traineddata') {
+                        const pct = Math.round(m.progress * 100);
+                        ocrProgressBar.style.width = (pct * 0.5) + '%';
+                        setStatus('جاري تحميل بيانات اللغة... ' + pct + '%', 'processing');
+                    }
+                }
+            });
+        }
+
+        async function startTextCapture() {
+            if (cooldown || textCaptureBusy) { setStatus('انتظر قليلاً...', 'error'); return; }
+            textCaptureBusy = true;
+            btnCapture.disabled = true;
+
+            // Show progress bar
+            ocrProgress.classList.add('active');
+            ocrProgressBar.style.width = '0%';
+
+            let stream = null;
+            try {
+                // Load Tesseract if needed
+                await loadTesseract();
+
+                // Init OCR worker with source language
+                const srcLang = sourceLangSelect.value;
+                setStatus('جاري تحميل محرك OCR للغة: ' + (TESS_LANG_MAP[srcLang] || 'eng') + '...', 'processing');
+                await initOCRWorker(srcLang);
+
+                // Capture screen
+                setStatus('اختر التبويب اللي فيه النصوص...', 'processing');
+                stream = await navigator.mediaDevices.getDisplayMedia({
+                    video: { displaySurface: 'browser' },
+                    audio: false
+                });
+
+                // Get video frame
+                const tempVideo = document.createElement('video');
+                tempVideo.srcObject = stream;
+                tempVideo.muted = true;
+
+                await new Promise((resolve) => {
+                    tempVideo.onloadeddata = resolve;
+                    tempVideo.play().catch(resolve);
+                });
+
+                // Wait for frame to render
+                await new Promise(r => setTimeout(r, 600));
+
+                // Draw to canvas
+                const canvas = document.createElement('canvas');
+                canvas.width = tempVideo.videoWidth || 1280;
+                canvas.height = tempVideo.videoHeight || 720;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(tempVideo, 0, 0);
+
+                // Stop stream immediately
+                stream.getTracks().forEach(t => t.stop());
+                stream = null;
+                tempVideo.srcObject = null;
+
+                // Get screenshot
+                const imageDataURL = canvas.toDataURL('image/jpeg', 0.85);
+
+                // Show screenshot on left panel
+                screenshotPreview.src = imageDataURL;
+                screenshotPreview.style.display = 'block';
+                videoPlayer.style.display = 'none';
+                mediaPlaceholder.style.display = 'none';
+
+                // Run OCR
+                setStatus('جاري استخراج النص (OCR)...', 'processing');
+                ocrProgressBar.style.width = '10%';
+
+                const { data: { text: extractedText } } = await ocrWorker.recognize(canvas);
+
+                ocrProgress.classList.remove('active');
+
+                if (!extractedText || !extractedText.trim()) {
+                    stats.chunks++;
+                    stats.failed++;
+                    updateStats();
+                    setStatus('لم يتم العثور على نص في الصورة. جرّب لغة مصدر مختلفة.', 'error');
+                    setTimeout(() => setStatus('جاهز للاستخدام'), 3000);
+                    return;
+                }
+
+                const cleanText = extractedText.trim();
+                setStatus('جاري الترجمة...', 'processing');
+
+                // Translate
+                const response = await fetch(API_URL + '/translate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: cleanText,
+                        target_lang: targetLangSelect.value,
+                    }),
+                });
+
+                const data = await response.json();
+                const translation = data.translation || cleanText;
+
+                // Add result card with thumbnail
+                addTextResult(cleanText, translation, imageDataURL);
+
+                stats.chunks++;
+                stats.success++;
+                updateStats();
+                setStatus('تم استخراج وترجمة النصوص ✓', 'success');
+
+            } catch (err) {
+                ocrProgress.classList.remove('active');
+                if (err.name === 'NotAllowedError') {
+                    setStatus('تم إلغاء الاختيار', 'error');
+                } else {
+                    stats.chunks++;
+                    stats.failed++;
+                    updateStats();
+                    setStatus('خطأ: ' + err.message, 'error');
+                }
+            } finally {
+                if (stream) { stream.getTracks().forEach(t => t.stop()); }
+                textCaptureBusy = false;
+                btnCapture.disabled = false;
+                setTimeout(() => {
+                    if (!textCaptureBusy) setStatus('جاهز للاستخدام');
+                }, 2000);
+            }
+        }
+
+        // ===== Clear Results =====
         function clearResults() {
             resultsContainer.innerHTML = '<div class="no-results" id="noResults"><div class="icon">🎙️</div><p>الترجمات بتظهر هنا</p></div>';
             stats = { chunks: 0, success: 0, failed: 0 };
             updateStats(); statsBar.style.display = 'none';
+            // Reset left panel
+            screenshotPreview.style.display = 'none';
+            screenshotPreview.src = '';
+            videoPlayer.srcObject = null;
+            videoPlayer.style.display = 'none';
+            mediaPlaceholder.style.display = 'flex';
         }
 
-        btnCapture.addEventListener('click', startCapture);
+        // ===== Event Listeners =====
+        btnCapture.addEventListener('click', () => {
+            if (currentMode === 'audio') {
+                startAudioCapture();
+            } else {
+                startTextCapture();
+            }
+        });
+
         btnStop.addEventListener('click', stopCapture);
         btnClear.addEventListener('click', clearResults);
 
-        // Health check
+        // Source lang change → re-init OCR worker if in text mode
+        sourceLangSelect.addEventListener('change', async () => {
+            if (currentMode === 'text' && tesseractLoaded) {
+                ocrWorker = null; // Will re-init on next capture
+            }
+        });
+
+        // ===== Health Check =====
         fetch(API_URL + '/health').then(r => r.json()).then(d => {
             setStatus(d.groq_ready ? 'جاهز — ' + d.model + ' ✓' : '⚠️ GROQ_API_KEY غير موجود', d.groq_ready ? 'success' : 'error');
         }).catch(() => setStatus('⚠️ لم يتم الاتصال بالسيرفر', 'error'));
