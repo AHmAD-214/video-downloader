@@ -23,7 +23,7 @@
     --radius: 16px;
     --radius-sm: 10px;
 }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; color-scheme: dark; }
 body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background: var(--bg); color: var(--text); line-height: 1.7;
@@ -403,14 +403,14 @@ const Capture = {
         return data;
     },
     getAudioChunks() { const c = this.audioChunks; this.audioChunks = []; return c; },
-    stop() {
-        if (this.processorNode) { this.processorNode.disconnect(); this.processorNode = null; }
+    async stop() {
+        if (this.processorNode) { this.processorNode.onaudioprocess = null; this.processorNode.disconnect(); this.processorNode = null; }
         if (this.sourceNode) { this.sourceNode.disconnect(); this.sourceNode = null; }
-        if (this.audioContext) { this.audioContext.close(); this.audioContext = null; }
+        if (this.audioContext) { try { await this.audioContext.close(); } catch(e) {} this.audioContext = null; }
         if (this.stream) { this.stream.getTracks().forEach(t => t.stop()); this.stream = null; }
         this.analyser = null; this.audioChunks = [];
         const video = document.getElementById('videoPlayer');
-        video.srcObject = null; video.classList.remove('active');
+        video.srcObject = null; video.pause(); video.classList.remove('active');
         document.getElementById('placeholder').classList.remove('hidden');
     }
 };
@@ -519,15 +519,15 @@ const App = {
             }
         }
         const success = await Capture.start();
-        if (!success) { this.setStatus('تم الإلغاء أو فشل الالتقاط', 'error'); btn.disabled = false; return; }
+        if (!success) { this.setStatus('تم الإلغاء أو فشل الالتقاط', 'error'); this.setState('idle'); btn.disabled = false; return; }
         this.setState('capturing'); btn.disabled = false;
         btn.classList.add('active');
         btn.querySelector('.capture-text').textContent = 'إيقاف الالتقاط';
         btn.querySelector('.capture-icon').textContent = '■';
         this.startTranscriptionLoop(); this.startVisualization();
     },
-    stop() {
-        this.setState('stopped'); Capture.stop(); Subtitles.clear();
+    async stop() {
+        this.setState('idle'); await Capture.stop(); Subtitles.clear();
         if (this.intervalId) { clearInterval(this.intervalId); this.intervalId = null; }
         if (this.animFrameId) { cancelAnimationFrame(this.animFrameId); this.animFrameId = null; }
         const btn = document.getElementById('captureBtn'); btn.classList.remove('active');
@@ -536,7 +536,7 @@ const App = {
         document.getElementById('visualizer').classList.remove('active');
         this.setStatus('تم الإيقاف', 'ready');
     },
-    onCaptureEnded() { this.stop(); },
+    async onCaptureEnded() { await this.stop(); },
     startTranscriptionLoop() {
         this.intervalId = setInterval(async () => {
             const chunks = Capture.getAudioChunks();
