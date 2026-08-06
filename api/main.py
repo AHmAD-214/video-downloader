@@ -35,6 +35,11 @@ class TranslateRequest(BaseModel):
     target_lang: str = "ar"
 
 
+class TranslateBlocksRequest(BaseModel):
+    blocks: list[str]
+    target_lang: str = "ar"
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok", "model": MODEL, "groq_ready": groq_client is not None}
@@ -90,6 +95,19 @@ async def translate_only(request: TranslateRequest):
         return {"translation": ""}
     translation = await translate_text(request.text, request.target_lang)
     return {"translation": translation}
+
+
+@app.post("/translate-blocks")
+async def translate_blocks(request: TranslateBlocksRequest):
+    """Translate multiple text blocks (paragraphs) separately to preserve structure."""
+    translations = []
+    for block in request.blocks:
+        if not block or not block.strip():
+            translations.append("")
+            continue
+        translation = await translate_text(block.strip(), request.target_lang)
+        translations.append(translation)
+    return {"translations": translations}
 
 
 async def translate_text(text: str, target_lang: str) -> str:
