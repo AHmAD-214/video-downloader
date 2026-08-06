@@ -364,15 +364,12 @@ footer { border-top: 1px solid var(--border); padding: 32px 24px; text-align: ce
     </footer>
     <script>
 const API_URL = 'https://video-downloader-6qc1.onrender.com';
+const REQUEST_TIMEOUT = 20000; // 20 second timeout per request
 
-// Pre-warm API immediately on page load
+// Pre-warm API on page load
 fetch(API_URL + '/health').catch(() => {});
-// Also warm when user scrolls near the tool
 const toolObserver = new IntersectionObserver((entries) => {
-    if (entries[0].isIntersecting) {
-        fetch(API_URL + '/health').catch(() => {});
-        toolObserver.disconnect();
-    }
+    if (entries[0].isIntersecting) { fetch(API_URL + '/health').catch(() => {}); toolObserver.disconnect(); }
 }, { threshold: 0.1 });
 toolObserver.observe(document.getElementById('tool'));
 
@@ -380,12 +377,9 @@ const Capture = {
     stream: null, audioContext: null, analyser: null, sourceNode: null, processorNode: null, audioChunks: [],
     async start() {
         try {
-            this.stream = await navigator.mediaDevices.getDisplayMedia({
-                video: { cursor: 'never' }, audio: true,
-            });
+            this.stream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: 'never' }, audio: true });
             const video = document.getElementById('videoPlayer');
-            video.srcObject = this.stream;
-            video.classList.add('active');
+            video.srcObject = this.stream; video.classList.add('active');
             document.getElementById('placeholder').classList.add('hidden');
             this.stream.getVideoTracks()[0].addEventListener('ended', () => App.onCaptureEnded());
             this.setupAudio();
@@ -402,10 +396,7 @@ const Capture = {
         this.sourceNode.connect(this.analyser);
         const processor = this.audioContext.createScriptProcessor(4096, 1, 1);
         this.processorNode = processor;
-        processor.onaudioprocess = (e) => {
-            const data = e.inputBuffer.getChannelData(0);
-            this.audioChunks.push(new Float32Array(data));
-        };
+        processor.onaudioprocess = (e) => { this.audioChunks.push(new Float32Array(e.inputBuffer.getChannelData(0))); };
         this.sourceNode.connect(processor);
         processor.connect(this.audioContext.destination);
     },
@@ -417,32 +408,14 @@ const Capture = {
     },
     getAudioChunks() { const c = this.audioChunks; this.audioChunks = []; return c; },
     async stop() {
-        if (this.processorNode) {
-            this.processorNode.onaudioprocess = null;
-            try { this.processorNode.disconnect(); } catch(e) {}
-            this.processorNode = null;
-        }
-        if (this.sourceNode) {
-            try { this.sourceNode.disconnect(); } catch(e) {}
-            this.sourceNode = null;
-        }
-        if (this.analyser) {
-            try { this.analyser.disconnect(); } catch(e) {}
-            this.analyser = null;
-        }
-        if (this.audioContext) {
-            try { await this.audioContext.close(); } catch(e) {}
-            this.audioContext = null;
-        }
-        if (this.stream) {
-            this.stream.getTracks().forEach(t => { try { t.stop(); } catch(e) {} });
-            this.stream = null;
-        }
+        if (this.processorNode) { this.processorNode.onaudioprocess = null; try { this.processorNode.disconnect(); } catch(e) {} this.processorNode = null; }
+        if (this.sourceNode) { try { this.sourceNode.disconnect(); } catch(e) {} this.sourceNode = null; }
+        if (this.analyser) { try { this.analyser.disconnect(); } catch(e) {} this.analyser = null; }
+        if (this.audioContext) { try { await this.audioContext.close(); } catch(e) {} this.audioContext = null; }
+        if (this.stream) { this.stream.getTracks().forEach(t => { try { t.stop(); } catch(e) {} }); this.stream = null; }
         this.audioChunks = [];
         const video = document.getElementById('videoPlayer');
-        video.srcObject = null;
-        video.removeAttribute('src');
-        video.load();
+        video.srcObject = null; video.removeAttribute('src'); video.load();
         video.classList.remove('active');
         document.getElementById('placeholder').classList.remove('hidden');
     }
@@ -459,10 +432,7 @@ const Subtitles = {
         this.container.appendChild(span);
         while (this.container.children.length > 4) this.container.removeChild(this.container.firstChild);
         setTimeout(() => {
-            if (span.parentNode) {
-                span.style.transition = 'opacity 0.5s'; span.style.opacity = '0';
-                setTimeout(() => span.remove(), 500);
-            }
+            if (span.parentNode) { span.style.transition = 'opacity 0.5s'; span.style.opacity = '0'; setTimeout(() => span.remove(), 500); }
         }, 6000);
     },
     clear() { if (this.container) this.container.innerHTML = ''; },
@@ -480,15 +450,11 @@ function encodeWAV(samples, sampleRate) {
     v.setUint16(32, 2, true); v.setUint16(34, 16, true);
     ws(36, 'data'); v.setUint32(40, samples.length * 2, true);
     let off = 44;
-    for (let i = 0; i < samples.length; i++) {
-        const s = Math.max(-1, Math.min(1, samples[i]));
-        v.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-        off += 2;
-    }
+    for (let i = 0; i < samples.length; i++) { const s = Math.max(-1, Math.min(1, samples[i])); v.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true); off += 2; }
     return new Blob([buf], { type: 'audio/wav' });
 }
 
-async function sendToBackend(audioData, sourceLang, targetLang) {
+async function sendToBackend(audioData, sourceLang, targetLang, externalSignal) {
     const totalLen = audioData.reduce((s, c) => s + c.length, 0);
     const merged = new Float32Array(totalLen);
     let off = 0;
@@ -498,20 +464,25 @@ async function sendToBackend(audioData, sourceLang, targetLang) {
     fd.append('file', wavBlob, 'audio.wav');
     fd.append('source_lang', sourceLang);
     fd.append('target_lang', targetLang);
-    const resp = await fetch(API_URL + '/api/process', { method: 'POST', body: fd });
-    if (!resp.ok) throw new Error('Backend error ' + resp.status);
-    return resp.json();
+    // Timeout controller
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+    // Link to external signal (for cancellation when stop is pressed)
+    if (externalSignal) externalSignal.addEventListener('abort', () => controller.abort(), { once: true });
+    try {
+        const resp = await fetch(API_URL + '/api/process', { method: 'POST', body: fd, signal: controller.signal });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        return resp.json();
+    } finally { clearTimeout(timeoutId); }
 }
 
 const App = {
-    state: 'idle', intervalId: null, animFrameId: null, processingCount: 0,
+    state: 'idle', intervalId: null, animFrameId: null, pendingAbort: null, errorCount: 0,
     async init() {
         Subtitles.init();
         document.getElementById('captureBtn').addEventListener('click', () => this.toggleCapture());
         document.getElementById('swapBtn').addEventListener('click', () => this.swapLanguages());
-        document.getElementById('mobileMenuBtn').addEventListener('click', () => {
-            document.getElementById('navLinks').classList.toggle('open');
-        });
+        document.getElementById('mobileMenuBtn').addEventListener('click', () => { document.getElementById('navLinks').classList.toggle('open'); });
     },
     async toggleCapture() {
         if (this.state === 'idle') await this.start();
@@ -521,25 +492,21 @@ const App = {
         const btn = document.getElementById('captureBtn');
         btn.disabled = true;
         this.setStatus('جاري التحضير...', 'loading');
-        // Warm API in parallel with getDisplayMedia (getDisplayMedia needs user gesture)
         const healthP = fetch(API_URL + '/health').catch(() => {});
         const success = await Capture.start();
         await healthP;
-        if (!success) {
-            this.setStatus('تم الإلغاء أو فشل الالتقاط', 'error');
-            this.setState('idle'); btn.disabled = false;
-            return;
-        }
-        this.setState('capturing'); btn.disabled = false;
-        btn.classList.add('active');
+        if (!success) { this.setStatus('تم الإلغاء', 'error'); this.setState('idle'); btn.disabled = false; return; }
+        this.setState('capturing'); btn.disabled = false; btn.classList.add('active');
         btn.querySelector('.capture-text').textContent = 'إيقاف الالتقاط';
         btn.querySelector('.capture-icon').textContent = '■';
-        this.processingCount = 0;
+        this.errorCount = 0;
         this.startTranscriptionLoop();
         this.startVisualization();
     },
     async stop() {
         this.setState('cooldown');
+        // Cancel any pending request
+        if (this.pendingAbort) { this.pendingAbort.abort(); this.pendingAbort = null; }
         await Capture.stop();
         Subtitles.clear();
         if (this.intervalId) { clearInterval(this.intervalId); this.intervalId = null; }
@@ -550,14 +517,10 @@ const App = {
         btn.querySelector('.capture-icon').textContent = '◯';
         document.getElementById('visualizer').classList.remove('active');
         this.setStatus('تم الإيقاف', 'ready');
-        // Cooldown: Chrome needs time to fully release getDisplayMedia before it can be called again
-        setTimeout(() => {
-            if (this.state === 'cooldown') this.setState('idle');
-        }, 800);
+        setTimeout(() => { if (this.state === 'cooldown') this.setState('idle'); }, 800);
     },
     async onCaptureEnded() { await this.stop(); },
     startTranscriptionLoop() {
-        // Use 2 second interval instead of 3 for faster response
         this.intervalId = setInterval(async () => {
             const chunks = Capture.getAudioChunks();
             if (!chunks.length) return;
@@ -566,17 +529,45 @@ const App = {
             for (const chunk of chunks) { for (let i = 0; i < chunk.length; i++) rms += chunk[i] * chunk[i]; }
             rms = Math.sqrt(rms / totalSamples);
             if (rms < 0.01) return;
-            this.processingCount++;
+            // Cancel previous pending request to avoid pile-up
+            if (this.pendingAbort) this.pendingAbort.abort();
+            this.pendingAbort = new AbortController();
+            const currentAbort = this.pendingAbort;
             this.setStatus('جاري النسخ والترجمة...', 'capturing');
             try {
                 const result = await sendToBackend(
                     chunks,
                     document.getElementById('sourceLang').value,
-                    document.getElementById('targetLang').value
+                    document.getElementById('targetLang').value,
+                    currentAbort.signal
                 );
-                if (result.translation) Subtitles.show(result.translation);
-            } catch (err) { console.error('Process error:', err); }
-            this.processingCount--;
+                if (currentAbort.signal.aborted) return;
+                if (result.translation) {
+                    Subtitles.show(result.translation);
+                    this.errorCount = 0;
+                } else if (result.transcription) {
+                    // Transcription exists but translation failed - show original
+                    Subtitles.show(result.transcription);
+                    this.errorCount = 0;
+                } else {
+                    // Both empty - model might not be ready
+                    this.errorCount++;
+                    if (this.errorCount >= 3) {
+                        this.setStatus('نموذج الذكاء الاصطناعي قيد التحميل، انتظر قليلاً...', 'loading');
+                    }
+                }
+            } catch (err) {
+                if (err.name === 'AbortError') return;
+                console.error('Process error:', err);
+                this.errorCount++;
+                if (this.errorCount >= 2) {
+                    this.setStatus('خطأ في الاتصال — تحقق من الإنترنت وحاول مرة أخرى', 'error');
+                } else {
+                    this.setStatus('جاري إعادة المحاولة...', 'loading');
+                }
+                // Reset error count after 10 seconds
+                setTimeout(() => { if (this.errorCount > 0) this.errorCount = Math.max(0, this.errorCount - 1); }, 10000);
+            }
         }, 2000);
     },
     startVisualization() {
@@ -586,17 +577,13 @@ const App = {
         const update = () => {
             const data = Capture.getFrequencyData();
             const step = Math.floor(data.length / bars.length);
-            bars.forEach((bar, i) => {
-                const val = data[i * step] || 0;
-                bar.style.height = Math.max(2, (val / 255) * 40) + 'px';
-            });
+            bars.forEach((bar, i) => { const val = data[i * step] || 0; bar.style.height = Math.max(2, (val / 255) * 40) + 'px'; });
             this.animFrameId = requestAnimationFrame(update);
         };
         update();
     },
     swapLanguages() {
-        const src = document.getElementById('sourceLang');
-        const tgt = document.getElementById('targetLang');
+        const src = document.getElementById('sourceLang'); const tgt = document.getElementById('targetLang');
         const tmp = src.value; src.value = tgt.value; tgt.value = tmp;
     },
     setState(state) { this.state = state; document.getElementById('statusIndicator').className = 'status-indicator ' + state; },
