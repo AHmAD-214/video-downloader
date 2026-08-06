@@ -2,8 +2,6 @@ from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 import httpx
 import os
-import io, wave
-import numpy as np
 
 app = FastAPI(title="VidLingo API")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -19,11 +17,9 @@ async def process_audio(file: UploadFile = File(...), source_lang: str = Form("e
     audio_bytes = await file.read()
     if not audio_bytes:
         return {"transcription": "", "translation": ""}
-
     transcription = await transcribe(audio_bytes, source_lang)
     if not transcription:
         return {"transcription": "", "translation": ""}
-
     translation = await translate(transcription, target_lang)
     return {"transcription": transcription, "translation": translation}
 
