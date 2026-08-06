@@ -369,7 +369,7 @@ const Capture = {
         try {
             this.stream = await navigator.mediaDevices.getDisplayMedia({
                 video: { cursor: 'never' }, audio: true,
-                preferCurrentTab: true, selfBrowserSurface: 'exclude',
+                preferCurrentTab: true,
                 surfaceSwitching: 'exclude', systemAudio: 'include'
             });
             const video = document.getElementById('videoPlayer');
